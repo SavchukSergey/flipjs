@@ -60,9 +60,8 @@
 
     li.current + li {
         display: block;
-        right: 0;
+        left: 50%;
         z-index: 2;
-        /*border-left: solid 1px rgba(0,0,0,0.25);*/
     }
 
     li.current:after, li.current + li:after {
@@ -103,16 +102,6 @@
         }
     }
 
-}
-
-
-
-.page-turn.active-prev .page3 {
-    border-right: solid 1px rgba(0,0,0,0.25);
-}
-
-.page-turn.active-next .page2 {
-    border-left: solid 1px rgba(0,0,0,0.25);
 }
 
 

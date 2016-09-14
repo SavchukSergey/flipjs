@@ -10,6 +10,15 @@ $(document).ready(function () {
     var $scaler = $container.find('.scaler');
 
     var touchCorner = 'right';
+    var stage = 0;
+
+    function setStage(corner, frame) {
+        touchCorner = corner;
+        stage = frame;
+
+        stage = Math.min(1, stage);
+        stage = Math.max(0, stage);
+    }
 
     function calculateFold(stage: number): IFold {
         var screenHeight: number = $scaler.height();
@@ -17,9 +26,6 @@ $(document).ready(function () {
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
-
-        stage = Math.min(1, stage);
-        stage = Math.max(0, stage);
 
         var angle = 45 + 45 * stage; //symmetry line angle changes from 45 to 90.
         angle = angle * Math.PI / 180;
@@ -157,8 +163,6 @@ $(document).ready(function () {
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
 
-        var stage = 1 - $('input#fold').val() / 100; //changes from 0 to 1
-
         var localFold = calculateFold(stage);
         var globalFold = getGlobalFold(localFold);
 
@@ -216,14 +220,13 @@ $(document).ready(function () {
         $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
 
         var frame = 100;
+        var step = 4;
 
         function draw() {
             requestAnimationFrame(function () {
-                //if (frame == 40) return;
-
-                if (frame >= 4) {
-                    frame -= 4;
-                    $('input#fold').val(frame);
+                if (frame >= 0) {
+                    frame -= step;
+                    setStage(corner, frame);
                     draw();
                 } else {
                     cleanPages();
