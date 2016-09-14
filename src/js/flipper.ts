@@ -155,10 +155,8 @@ $(document).ready(function () {
     }
 
     function refresh() {
-        var $slider = $('.page-turn .scaler');
-
-        var screenHeight: number = $slider.height();
-        var screenWidth: number = $slider.width();
+        var screenHeight: number = $scaler.height();
+        var screenWidth: number = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -219,14 +217,14 @@ $(document).ready(function () {
         clean();
         $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
 
-        var frame = 100;
+        var frame = 0;
         var step = 4;
 
         function draw() {
             requestAnimationFrame(function () {
-                if (frame >= 0) {
-                    frame -= step;
-                    setStage(corner, frame);
+                if (frame <= 100) {
+                    frame += step;
+                    setStage(corner, frame / 100);
                     draw();
                 } else {
                     cleanPages();
@@ -239,6 +237,7 @@ $(document).ready(function () {
 
         draw();
     }
+
     function animateForward() {
         cleanPages();
         $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');

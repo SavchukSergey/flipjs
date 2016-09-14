@@ -246,9 +246,8 @@ $(document).ready(function () {
         }
     }
     function refresh() {
-        var $slider = $('.page-turn .scaler');
-        var screenHeight = $slider.height();
-        var screenWidth = $slider.width();
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
         var localFold = calculateFold(stage);
@@ -298,13 +297,13 @@ $(document).ready(function () {
         touchCorner = corner;
         clean();
         $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
-        var frame = 100;
+        var frame = 0;
         var step = 4;
         function draw() {
             requestAnimationFrame(function () {
-                if (frame >= 0) {
-                    frame -= step;
-                    setStage(corner, frame);
+                if (frame <= 100) {
+                    frame += step;
+                    setStage(corner, frame / 100);
                     draw();
                 }
                 else {
