@@ -1,0 +1,191 @@
+@media (max-aspect-ratio: 1414/1000) { 
+    .page-turn {
+        width: 95vw;
+        height: 67.178vw;
+    }
+}
+
+@media (min-aspect-ratio: 1414/1000) { 
+    .page-turn {
+        width: 134.343vh;
+        height: 95vh;
+    }
+}
+
+.page-turn {
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.page-turn .scaler {
+    width: 93%;
+    height: 93%;
+    margin: 2% auto;
+    border: solid 1px rgba(0,0,0,0.25);
+    box-shadow: 0px 0px 17px 5px rgba(0,0,0,0.25)
+}
+
+.page-turn ol {
+    width: 100%;
+    height: 100%;
+    clear: both;
+    list-style: none;
+    position: relative;
+    padding: 0;
+    margin: 0;
+}
+
+.page-turn li {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: none;
+}
+
+.page-turn img {
+    width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+}
+
+.page-turn li.current {
+    display: block;
+    left: 0;
+    z-index: 1;
+}
+
+.page-turn li.current + li {
+    display: block;
+    right: 0;
+    z-index: 2;
+    /*border-left: solid 1px rgba(0,0,0,0.25);*/
+}
+
+.page-turn li.current:after, .page-turn li.current + li:after {
+    content: ' ';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+.page-turn li.current:after {
+    background-image: -webkit-linear-gradient(left,rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+}
+
+.page-turn li.current + li:after {
+    background-image: -webkit-linear-gradient(right,rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+}
+
+
+
+
+.page-turn .page1, .page-turn .page2, .page-turn .page3, .page-turn .page4 {
+    display: block;
+    overflow: hidden;
+}
+
+.page-turn.active li, .page-turn.active li img {
+    transform-origin: top left;
+}
+
+.page-turn.active-next .page3, .page-turn.active-prev .page2 {
+    z-index: 100;
+    box-shadow: -17px 0px 17px 0px rgba(0,0,0,0.25);
+}
+
+.page-turn.active-next .page3 img, .page-turn.active-prev .page2 img {
+    border: solid 1px #666;
+}
+
+.page-turn.active-prev .page3 {
+    border-right: solid 1px rgba(0,0,0,0.25);
+}
+
+.page-turn.active-next .page2 {
+    border-left: solid 1px rgba(0,0,0,0.25);
+}
+
+
+.page-turn.active .page3 {
+    left: 0;
+    z-index: 11;
+}
+
+.page-turn.active .page4 {
+    z-index: 10;
+}
+
+.page-turn.active-next .page4 {
+    left: 0;
+}
+
+
+.page-turn.active-prev .page1 {
+    z-index: 99;
+}
+
+.page-turn.active-prev .page3 {
+    z-index: 97;
+}
+
+.page-turn.active-prev .page4 {
+    right: 101;
+}
+
+
+
+.page-turn.debug .debug-point {
+    display: block;
+}
+
+.page-turn .debug-point {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2em;
+    height: 2em;
+    background-color:  rgba(255, 0, 0, 0.5);
+    border-color:  rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+    z-index: 1000;
+    text-align: center;
+    line-height: 2em;
+    margin-top: -1em;
+    margin-left: -1em;
+}
+
+.page-turn .fold-point {
+    background-color:  rgba(0, 255, 0, 0.5);
+    border-color:  rgba(0, 255, 0, 0.8);
+}
+
+input {
+    position: fixed;
+    display: inline-block;
+    bottom: 2em;
+    left: 17%;
+    width: 66%;
+    z-index: 1000;
+}
+
+button {
+    position: fixed;
+    display: inline-block;
+    bottom: 2em;
+    width: 10%;
+    z-index: 1000;
+}
+
+button.forward {
+    right: 5%;
+}
+
+button.backward {
+    left: 5%;
+}
