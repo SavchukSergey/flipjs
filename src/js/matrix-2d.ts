@@ -1,4 +1,4 @@
-function Matrix2D(elements) {
+function Matrix2D(elements?: number[]) {
 
     var self = this;
 
@@ -19,36 +19,6 @@ function Matrix2D(elements) {
         var dy = bz * cx - bx * cz;
         var dz = bx * cy - by * cx;
         return ax * dx + ay * dy + az * dz;
-    }
-
-    function transformVector(v) {
-        return [
-            v[0] * m[0] + v[1] * m[3] + m[6],
-            v[0] * m[1] + v[1] * m[4] + m[7]
-        ];
-    }
-
-    function transformBox(box) {
-        var xmin = box.left;
-        var ymin = box.top;
-        var xmax = box.left + box.width;
-        var ymax = box.top + box.height;
-        var tl = transformVector([xmin, ymin]),
-            tr = transformVector([xmax, ymin]),
-            bl = transformVector([xmin, ymax]),
-            br = transformVector([xmax, ymax]);
-        var y1 = Math.max(tl[1], tr[1], bl[1], br[1]);
-        var y0 = Math.min(tl[1], tr[1], bl[1], br[1]);
-        var x1 = Math.max(tl[0], tr[0], bl[0], br[0]);
-        var x0 = Math.min(tl[0], tr[0], bl[0], br[0]);
-        return {
-            top: y0,
-            bottom: y1,
-            left: x0,
-            right: x1,
-            width: x1 - x0,
-            height: y1 - y0
-        };
     }
 
     function multiplyArray(other) {
@@ -130,12 +100,20 @@ function Matrix2D(elements) {
 
     self.getElements = getElements;
     self.getTransformExpression = getTransformExpression;
-    self.transformVector = transformVector;
-    self.transformBox = transformBox;
     self.translate = translate;
     self.scale = scale;
     self.reverse = reverse;
     self.rotate = rotate;
     self.multiply = multiply;
     self.determinant = determinant;
+}
+
+interface IMatrix2D {
+
+    getTransformExpression(): string;
+
+    reverse(): IMatrix2D;
+
+    multiply(other: IMatrix2D); IMatrix2D;
+    
 }

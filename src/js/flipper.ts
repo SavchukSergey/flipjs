@@ -1,5 +1,6 @@
 ///<reference path="matrix-2d.ts" />
 ///<reference path="vector-2d.ts" />
+///<reference path="fold.ts" />
 
 declare var $:any;
 
@@ -10,9 +11,9 @@ $(document).ready(function () {
 
     var touchCorner = 'right';
 
-    function calculateFold(stage) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
+    function calculateFold(stage: number): IFold {
+        var screenHeight: number = $scaler.height();
+        var screenWidth: number = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -26,7 +27,7 @@ $(document).ready(function () {
         var fx = stage * pageWidth;
         var fy = 0;
 
-        var foldA = new Vector2D(fx, fy);
+        var foldA: IVector2D = new Vector2D(fx, fy);
 
         var dpl = fx * Math.cos(angle);
         var dpx = dpl * Math.cos(angle);
@@ -38,7 +39,7 @@ $(document).ready(function () {
         var pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
         var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
         var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
-        var pointE = new Vector2D(0, 0);
+        var pointE: IVector2D = new Vector2D(0, 0);
 
         var foldB = pointB;
         if (foldB.x < 0) {
@@ -69,7 +70,7 @@ $(document).ready(function () {
         };
     }
 
-    function getGlobalFold(fold) {
+    function getGlobalFold(fold: IFold) : IFold {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
@@ -95,11 +96,11 @@ $(document).ready(function () {
         };
     }
 
-    function dumpFold(globalFold) {
+    function dumpFold(globalFold: IFold) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
-        function debugPoint($point, vector) {
+        function debugPoint($point, vector: IVector2D) {
             $point.css({
                 left: (100 * vector.x / screenWidth) + '%',
                 top: (100 * vector.y / screenHeight) + '%'
@@ -115,7 +116,7 @@ $(document).ready(function () {
         debugPoint($('.point-e'), globalFold.pointE);
     }
 
-    function getOuterClipMatrix(pointO, pointU, pointV, originalWidth, originalHeight) {
+    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number) : IMatrix2D {
         var width = pointU.sub(pointO).length();
         var height = pointV.sub(pointO).length();
         var clipX = pointU.sub(pointO).changeLength(width / originalWidth);
@@ -123,7 +124,7 @@ $(document).ready(function () {
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
-    function setupPage($page, matrix, clipperMatrix) {
+    function setupPage($page, matrix: IMatrix2D, clipperMatrix: IMatrix2D) {
         $page.css({
             transform: clipperMatrix.getTransformExpression()
         })
@@ -135,7 +136,7 @@ $(document).ready(function () {
         })
     }
 
-    function getPageMatrix(globalFold) {
+    function getPageMatrix(globalFold: IFold) {
         if (touchCorner == 'right') {
             var page3XAxis = globalFold.pointC.sub(globalFold.pointB).normalize();
             var page3YAxis = globalFold.pointA.sub(globalFold.pointB).normalize();
@@ -150,8 +151,8 @@ $(document).ready(function () {
     function refresh() {
         var $slider = $('.page-turn .scaler');
 
-        var screenHeight = $slider.height();
-        var screenWidth = $slider.width();
+        var screenHeight: number = $slider.height();
+        var screenWidth: number = $slider.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -188,7 +189,7 @@ $(document).ready(function () {
         $container.removeClass('active').find('li').css('transform', '').find('img').css('transform', '');
     }
 
-    function shiftCurrent(delta) {
+    function shiftCurrent(delta: number) {
         var $current = $container.find('li.current');
         var $node = $current;
         while (delta) {
@@ -208,7 +209,7 @@ $(document).ready(function () {
         return $current;
     }
 
-    function animate(corner, delta) {
+    function animate(corner: string, delta: number) {
         touchCorner = corner;
 
         clean();

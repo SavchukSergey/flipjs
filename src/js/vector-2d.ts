@@ -38,3 +38,23 @@ function Vector2D(x, y) {
     }
 
 }
+
+interface IVector2D {
+
+    sub(other: IVector2D): IVector2D;
+
+    add(other: IVector2D): IVector2D;
+
+    rotateClockwise90(): IVector2D;
+
+    changeLength(len: number): IVector2D;
+
+    length(): number;
+
+    normalize(): IVector2D;
+
+    x: number;
+
+    y: number;
+
+}
