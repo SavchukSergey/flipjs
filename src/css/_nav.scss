@@ -1,0 +1,68 @@
+@import '_variables.scss';
+
+.page-turn {
+    a.nav {
+        position: absolute;
+        display: block;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        z-index: 1000;
+        background-color: rgba(0,0,0,0.5);
+        font-size: 3em;
+        overflow: hidden;
+
+        transition: opacity 500ms ease-in-out;
+        opacity: 0;
+
+        &:after {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            margin-top: -0.5em;
+            color: white;
+            text-shadow:
+                -1px -1px 0 $arrow-stroke-color,  
+                1px -1px 0 $arrow-stroke-color,
+                -1px 1px 0 $arrow-stroke-color,
+                1px 1px 0 $arrow-stroke-color
+             }
+
+        &.nav-next, &.nav-next-2 {
+            right: 0;
+            &:after {
+                content: '\2192';
+            }
+        }
+
+        &.nav-prev, &.nav-prev-2 {
+            left: 0;
+            &:after {
+                content: '\2190';
+            }
+        }
+    }
+
+    & .scaler:hover a.nav {
+        width: 1.5em;
+        opacity: 1;
+    }
+
+    @media #{$media-tablet-or-smaller} {
+        a.nav {
+            font-size: 2em;
+        }
+
+        a.nav-next-2, a.nav-prev-2 {
+            display: none;
+        }
+    }
+
+    @media #{$media-desktop-or-greater} {
+        a.nav-next, a.nav-prev {
+            display: none;
+        }
+    }
+}

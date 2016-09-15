@@ -1,26 +1,16 @@
-$pageWidth: 210mm;
-$pageHeight: 297mm;
-$one-page-ratio: $pageWidth / $pageHeight;
-$onePageRatioString: (round($one-page-ratio * 1000)) #{'/'} 1000;
-$two-page-ratio: 2 * $pageWidth / $pageHeight;
-$twoPageRatioString: (round($two-page-ratio * 1000)) #{'/'} 1000;
-$desktop-scaler-ratio: 93%;
-$desktop-scaler-margin: 2%;
-$tablet-scaler-ratio: 94%;
-$tablet-scaler-margin: 1%;
-$media-tablet-or-smaller: 'screen and (max-width: 767px)';
-$media-desktop-or-greater: 'screen and (min-width: 768px)';
-$fill: 0.95;
-$arrow-stroke-color: #666;
+@import '_variables.scss';
+@import '_nav.scss';
+@import '_one-page.scss';
+@import '_debug.scss';
 
 .page-turn {
     @media #{$media-desktop-or-greater} {
-        @media (max-aspect-ratio: $twoPageRatioString) { 
+        @media (max-aspect-ratio: $two-page-ratio-string) { 
             width: $fill * 100vw;
             height: $fill * 100vw / $two-page-ratio;
         }
 
-        @media (min-aspect-ratio: $twoPageRatioString) { 
+        @media (min-aspect-ratio: $two-page-ratio-string) { 
             width: $fill * 100vh * $two-page-ratio;
             height: $fill * 100vh;
             margin-top: (1 - $fill) * 100vh / 2 !important;
@@ -29,11 +19,11 @@ $arrow-stroke-color: #666;
 
 
     @media #{$media-tablet-or-smaller} { 
-        @media (max-aspect-ratio: $onePageRatioString) {
+        @media (max-aspect-ratio: $one-page-ratio-string) {
             width: $fill * 100vw;
             height: $fill * 100vw / $one-page-ratio;
         }
-        @media (min-aspect-ratio: $onePageRatioString) { 
+        @media (min-aspect-ratio: $one-page-ratio-string) { 
             width: $fill * 100vh * $one-page-ratio;
             height: $fill * 100vh;
             margin-top: (1 - $fill) * 100vh / 2 !important;
@@ -150,95 +140,6 @@ $arrow-stroke-color: #666;
         }
     }
 
-    &.one-page {
-        .scaler {
-            width: $desktop-scaler-ratio / 2;
-            height: $desktop-scaler-ratio;
-
-            li {
-                width: 100%;
-
-                &.current + li {
-                    display: none;
-                }
-            }
-        }
-    }
-
-    @media #{$media-tablet-or-smaller} {
-        .scaler {
-            li {
-                width: 100%;
-
-                &.current + li {
-                    display: none;
-                }
-            }
-        }
-
-        &.active-next {
-            li.current {
-                & + li {
-                    left: 100%;
-                }
-            }
-        }
-    }
-
-    a.nav {
-        position: absolute;
-        display: block;
-        top: 0;
-        bottom: 0;
-        width: 0;
-        z-index: 1000;
-        background-color: rgba(0,0,0,0.5);
-        font-size: 3em;
-        overflow: hidden;
-
-        transition: opacity 500ms ease-in-out;
-        opacity: 0;
-
-        &:after {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            margin-top: -0.5em;
-            color: white;
-            text-shadow:
-                -1px -1px 0 $arrow-stroke-color,  
-                1px -1px 0 $arrow-stroke-color,
-                -1px 1px 0 $arrow-stroke-color,
-                1px 1px 0 $arrow-stroke-color
-             }
-
-        &.nav-next {
-            right: 0;
-            &:after {
-                content: '\2192';
-            }
-        }
-
-        &.nav-prev {
-            left: 0;
-            &:after {
-                content: '\2190';
-            }
-        }
-    }
-
-    & .scaler:hover a.nav {
-        width: 1.5em;
-        opacity: 1;
-    }
-
-    @media #{$media-tablet-or-smaller} {
-        a.nav {
-            font-size: 2em;
-        }
-    }
 
 
 }
@@ -269,41 +170,3 @@ $arrow-stroke-color: #666;
 .page-turn.active-prev .page4 {
     right: 101;
 }
-
-
-
-.page-turn.debug .debug-point {
-    display: block;
-}
-
-.page-turn .debug-point {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 2em;
-    height: 2em;
-    background-color:  rgba(255, 0, 0, 0.5);
-    border-color:  rgba(255, 0, 0, 0.8);
-    border-radius: 50%;
-    z-index: 1000;
-    text-align: center;
-    line-height: 2em;
-    margin-top: -1em;
-    margin-left: -1em;
-}
-
-.page-turn .fold-point {
-    background-color:  rgba(0, 255, 0, 0.5);
-    border-color:  rgba(0, 255, 0, 0.8);
-}
-
-input {
-    position: fixed;
-    display: inline-block;
-    bottom: 2em;
-    left: 17%;
-    width: 66%;
-    z-index: 1000;
-}
-

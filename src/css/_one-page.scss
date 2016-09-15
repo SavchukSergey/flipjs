@@ -1,0 +1,35 @@
+@import '_variables.scss';
+
+.page-turn {
+    &.one-page {
+        .scaler {
+            width: $desktop-scaler-ratio / 2;
+            height: $desktop-scaler-ratio;
+
+            li {
+                display: none !important;
+                left: 0 !important;
+                width: 100%;
+
+                &.current-one {
+                    display: block !important;
+                }
+            }
+
+        }
+    }
+
+    @media #{$media-tablet-or-smaller} {
+        .scaler {
+            li {
+                display: none !important;
+                left: 0 !important;
+                width: 100%;
+
+                &.current-one {
+                    display: block !important;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,14 @@
+$page-width: 210mm;
+$page-height: 297mm;
+$one-page-ratio: $page-width / $page-height;
+$one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
+$two-page-ratio: 2 * $page-width / $page-height;
+$two-page-ratio-string: (round($two-page-ratio * 1000)) #{'/'} 1000;
+$desktop-scaler-ratio: 93%;
+$desktop-scaler-margin: 2%;
+$tablet-scaler-ratio: 94%;
+$tablet-scaler-margin: 1%;
+$media-tablet-or-smaller: 'screen and (max-width: 767px)';
+$media-desktop-or-greater: 'screen and (min-width: 768px)';
+$fill: 0.95;
+$arrow-stroke-color: #666;

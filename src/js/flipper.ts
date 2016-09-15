@@ -202,22 +202,46 @@ $(document).ready(function () {
 
     function shiftCurrent(delta: number) {
         var $current = $container.find('li.current');
+        var $currentOne = $container.find('li.current-one');
+
         var $node = $current;
-        while (delta) {
-            if (delta > 0) {
-                $node = $node.next('li');
-                delta--;
-            } else if (delta < 0) {
-                $node = $node.prev('li');
-                delta++;
+        var $nodeOne = $currentOne;
+        while (delta >= 2) {
+            $node = $node.next('li').next('li');;
+            $nodeOne = $nodeOne.next('li').next('li');;
+            delta -= 2;
+        }
+        while (delta <= -2) {
+            $node = $node.prev('li').prev('li');;
+            $nodeOne = $nodeOne.prev('li').prev('li');;
+            delta += 2;
+        }
+        while (delta >= 1) {
+            if ($node[0] == $nodeOne[0]) {
+                $nodeOne = $nodeOne.next('li');
+            } else {
+                $node = $node.next('li').next('li');
+                $nodeOne = $nodeOne.next('li');
             }
+            delta--;
+        }
+        while (delta <= -1) {
+            if ($node[0] == $nodeOne[0]) {
+                $node = $node.prev('li').prev('li');
+                $nodeOne = $nodeOne.prev('li');
+            } else {
+                $nodeOne = $nodeOne.prev('li');
+            }
+            delta++;
         }
         if ($node.length) {
             $current.removeClass('current');
+            $currentOne.removeClass('current-one');
             $node.addClass('current');
-            return $node;
+            $nodeOne.addClass('current-one');
         }
-        return $current;
+
+        return $node;
     }
 
     function animate(corner: string, delta: number) {
@@ -275,21 +299,33 @@ $(document).ready(function () {
         }
     }
 
-    function animateForward() {
+    function animateFlipForward() {
         cleanPages();
         $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
         animate('right', 2);
     }
 
-    function animateBackward() {
+    function animateFlipBackward() {
         cleanPages();
         $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
         animate('left', -2);
     }
 
+    function animateForward() {
+        shiftCurrent(1);
+    }
+
+    function animateBackward() {
+        shiftCurrent(-1);
+    }
+
     refresh();
 
-    $('body').on('click', '.page-turn .nav-next', () => {
+    $('body').on('click', '.page-turn .nav-next-2', () => {
+        animateFlipForward();
+    }).on('click', '.page-turn .nav-prev-2', () => {
+        animateFlipBackward();
+    }).on('click', '.page-turn .nav-next', () => {
         animateForward();
     }).on('click', '.page-turn .nav-prev', () => {
         animateBackward();
