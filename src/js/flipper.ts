@@ -2,7 +2,7 @@
 ///<reference path="vector-2d.ts" />
 ///<reference path="fold.ts" />
 
-declare var $:any;
+declare var $: any;
 
 $(document).ready(function () {
 
@@ -20,6 +20,13 @@ $(document).ready(function () {
         stage = Math.max(0, stage);
     }
 
+    function easeInOutCubic(t, b, c, d) {
+        t /= d / 2;
+        if (t < 1) return c / 2 * t * t * t + b;
+        t -= 2;
+        return c / 2 * (t * t * t + 2) + b;
+    };
+
     function calculateFold(stage: number): IFold {
         var screenHeight: number = $scaler.height();
         var screenWidth: number = $scaler.width();
@@ -30,7 +37,9 @@ $(document).ready(function () {
         var angle = 45 + 45 * stage; //symmetry line angle changes from 45 to 90.
         angle = angle * Math.PI / 180;
 
-        var fx = stage * pageWidth;
+        var x = easeInOutCubic(stage, 0, 1, 1);
+
+        var fx = x * pageWidth;
         var fy = 0;
 
         var foldA: IVector2D = new Vector2D(fx, fy);
@@ -76,7 +85,7 @@ $(document).ready(function () {
         };
     }
 
-    function getGlobalFold(fold: IFold) : IFold {
+    function getGlobalFold(fold: IFold): IFold {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
@@ -122,7 +131,7 @@ $(document).ready(function () {
         debugPoint($('.point-e'), globalFold.pointE);
     }
 
-    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number) : IMatrix2D {
+    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): IMatrix2D {
         var width = pointU.sub(pointO).length();
         var height = pointV.sub(pointO).length();
         var clipX = pointU.sub(pointO).changeLength(width / originalWidth);
@@ -230,12 +239,40 @@ $(document).ready(function () {
                     cleanPages();
                     clean();
                     shiftCurrent(delta);
+                    preloadImages();
                 }
                 refresh();
             });
         }
 
         draw();
+    }
+
+    function preloadImages() {
+        preloadNextImages();
+        preloadPrevImages();
+    }
+
+    function preloadNextImages() {
+        var $current = $scaler.find('li.current');
+        for (var i = 0; i < 3; i++) {
+            var $current = $current.next('li');
+            var $img = $current.find('img');
+            var src = $img.attr('src');
+            var img = new Image()
+            img.src = src;
+        }
+    }
+
+    function preloadPrevImages() {
+        var $current = $scaler.find('li.current');
+        for (var i = 0; i < 3; i++) {
+            var $current = $current.prev('li');
+            var $img = $current.find('img');
+            var src = $img.attr('src');
+            var img = new Image()
+            img.src = src;
+        }
     }
 
     function animateForward() {
@@ -250,18 +287,13 @@ $(document).ready(function () {
         animate('left', -2);
     }
 
-    $('input#fold').bind('input', function () {
-        touchCorner = 'left';
-        clean();
-        $container.addClass('active');
-        var $current = $container.find('li.current');
-        $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
-        refresh();
-    });
-
-    $('button.forward').click(animateForward);
-    $('button.backward').click(animateBackward);
-
     refresh();
 
+    $('body').on('click', '.page-turn .nav-next', () => {
+        animateForward();
+    }).on('click', '.page-turn .nav-prev', () => {
+        animateBackward();
+    });
+
 });
+

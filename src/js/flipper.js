@@ -130,6 +130,14 @@ $(document).ready(function () {
         stage = Math.min(1, stage);
         stage = Math.max(0, stage);
     }
+    function easeInOutCubic(t, b, c, d) {
+        t /= d / 2;
+        if (t < 1)
+            return c / 2 * t * t * t + b;
+        t -= 2;
+        return c / 2 * (t * t * t + 2) + b;
+    }
+    ;
     function calculateFold(stage) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
@@ -137,7 +145,8 @@ $(document).ready(function () {
         var pageHeight = screenHeight;
         var angle = 45 + 45 * stage; //symmetry line angle changes from 45 to 90.
         angle = angle * Math.PI / 180;
-        var fx = stage * pageWidth;
+        var x = easeInOutCubic(stage, 0, 1, 1);
+        var fx = x * pageWidth;
         var fy = 0;
         var foldA = new Vector2D(fx, fy);
         var dpl = fx * Math.cos(angle);
@@ -310,11 +319,36 @@ $(document).ready(function () {
                     cleanPages();
                     clean();
                     shiftCurrent(delta);
+                    preloadImages();
                 }
                 refresh();
             });
         }
         draw();
+    }
+    function preloadImages() {
+        preloadNextImages();
+        preloadPrevImages();
+    }
+    function preloadNextImages() {
+        var $current = $scaler.find('li.current');
+        for (var i = 0; i < 3; i++) {
+            var $current = $current.next('li');
+            var $img = $current.find('img');
+            var src = $img.attr('src');
+            var img = new Image();
+            img.src = src;
+        }
+    }
+    function preloadPrevImages() {
+        var $current = $scaler.find('li.current');
+        for (var i = 0; i < 3; i++) {
+            var $current = $current.prev('li');
+            var $img = $current.find('img');
+            var src = $img.attr('src');
+            var img = new Image();
+            img.src = src;
+        }
     }
     function animateForward() {
         cleanPages();
@@ -326,17 +360,12 @@ $(document).ready(function () {
         $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
         animate('left', -2);
     }
-    $('input#fold').bind('input', function () {
-        touchCorner = 'left';
-        clean();
-        $container.addClass('active');
-        var $current = $container.find('li.current');
-        $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
-        refresh();
-    });
-    $('button.forward').click(animateForward);
-    $('button.backward').click(animateBackward);
     refresh();
+    $('body').on('click', '.page-turn .nav-next', function () {
+        animateForward();
+    }).on('click', '.page-turn .nav-prev', function () {
+        animateBackward();
+    });
 });
 
 //# sourceMappingURL=flipper.js.map
