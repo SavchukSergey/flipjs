@@ -4,15 +4,17 @@ $one-page-ratio: $pageWidth / $pageHeight;
 $onePageRatioString: (round($one-page-ratio * 1000)) #{'/'} 1000;
 $two-page-ratio: 2 * $pageWidth / $pageHeight;
 $twoPageRatioString: (round($two-page-ratio * 1000)) #{'/'} 1000;
-$scalerRatio: 93%;
-$mediaTabletOrSmaller: 'screen and (max-width: 767px)';
-$mediaDesktopOrGreater: 'screen and (min-width: 768px)';
-$scalerMargin: 2%;
+$desktop-scaler-ratio: 93%;
+$desktop-scaler-margin: 2%;
+$tablet-scaler-ratio: 94%;
+$tablet-scaler-margin: 1%;
+$media-tablet-or-smaller: 'screen and (max-width: 767px)';
+$media-desktop-or-greater: 'screen and (min-width: 768px)';
 $fill: 0.95;
 $arrow-stroke-color: #666;
 
 .page-turn {
-    @media #{$mediaDesktopOrGreater} {
+    @media #{$media-desktop-or-greater} {
         @media (max-aspect-ratio: $twoPageRatioString) { 
             width: $fill * 100vw;
             height: $fill * 100vw / $two-page-ratio;
@@ -26,7 +28,7 @@ $arrow-stroke-color: #666;
     } 
 
 
-    @media #{$mediaTabletOrSmaller} { 
+    @media #{$media-tablet-or-smaller} { 
         @media (max-aspect-ratio: $onePageRatioString) {
             width: $fill * 100vw;
             height: $fill * 100vw / $one-page-ratio;
@@ -55,11 +57,19 @@ $arrow-stroke-color: #666;
 
     .scaler {
         position: relative;
-        width: $scalerRatio;
-        height: $scalerRatio;
-        margin: $scalerMargin auto;
         border: solid 1px rgba(0,0,0,0.25);
-        box-shadow: 0px 0px 17px 5px rgba(0,0,0,0.25)
+        box-shadow: 0px 0px 17px 5px rgba(0,0,0,0.25);
+
+        @media #{$media-desktop-or-greater} {
+            width: $desktop-scaler-ratio;
+            height: $desktop-scaler-ratio;
+            margin: $desktop-scaler-margin auto;
+        }
+        @media #{$media-tablet-or-smaller} {
+            width: $tablet-scaler-ratio;
+            height: $tablet-scaler-ratio;
+            margin: $tablet-scaler-margin auto;
+        }
     }
 
     ol {
@@ -109,7 +119,7 @@ $arrow-stroke-color: #666;
         z-index: 1000;
     }
 
-    @media #{$mediaDesktopOrGreater} {
+    @media #{$media-desktop-or-greater} {
         &:not(.one-page) {
             li.current:after {
                 background-image: -webkit-linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
@@ -142,8 +152,8 @@ $arrow-stroke-color: #666;
 
     &.one-page {
         .scaler {
-            width: $scalerRatio / 2;
-            height: $scalerRatio;
+            width: $desktop-scaler-ratio / 2;
+            height: $desktop-scaler-ratio;
 
             li {
                 width: 100%;
@@ -155,13 +165,21 @@ $arrow-stroke-color: #666;
         }
     }
 
-    @media #{$mediaTabletOrSmaller} {
+    @media #{$media-tablet-or-smaller} {
         .scaler {
             li {
                 width: 100%;
 
                 &.current + li {
                     display: none;
+                }
+            }
+        }
+
+        &.active-next {
+            li.current {
+                & + li {
+                    left: 100%;
                 }
             }
         }
@@ -214,7 +232,13 @@ $arrow-stroke-color: #666;
     & .scaler:hover a.nav {
         width: 1.5em;
         opacity: 1;
-    } 
+    }
+
+    @media #{$media-tablet-or-smaller} {
+        a.nav {
+            font-size: 2em;
+        }
+    }
 
 
 }
