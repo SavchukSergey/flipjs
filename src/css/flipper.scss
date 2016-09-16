@@ -113,10 +113,14 @@
         &:not(.one-page) {
             li.current:after {
                 background-image: -webkit-linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+                background-image: -o-linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+                background-image: linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
             }
 
             li.current + li:after {
                 background-image: -webkit-linear-gradient(right, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+                background-image: -o-linear-gradient(right, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+                background-image: linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
             }
         }
     }

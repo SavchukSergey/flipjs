@@ -337,18 +337,17 @@ $(document).ready(function () {
         var step = 4;
         function draw() {
             requestAnimationFrame(function () {
-                if (frame <= 100) {
-                    frame += step;
-                    setStage(corner, frame / 100);
-                    draw();
-                }
-                else {
+                if (frame > 100) {
                     cleanPages();
                     clean();
                     shiftCurrent(delta);
                     preloadImages();
+                    return;
                 }
+                setStage(corner, frame / 100);
+                frame += step;
                 refresh();
+                draw();
             });
         }
         draw();
@@ -357,14 +356,24 @@ $(document).ready(function () {
         preloadNextImages();
         preloadPrevImages();
     }
+    var preloaders = {};
+    function preloadImage($img) {
+        if (!$img.length)
+            return;
+        var src = $img[0].src;
+        var img = new Image();
+        img.src = src;
+        img.onload = function () {
+            console.log(src);
+        };
+        preloaders[src] = img;
+    }
     function preloadNextImages() {
         var $current = $scaler.find('li.current');
         for (var i = 0; i < 3; i++) {
             var $current = $current.next('li');
             var $img = $current.find('img');
-            var src = $img.attr('src');
-            var img = new Image();
-            img.src = src;
+            preloadImage($img);
         }
     }
     function preloadPrevImages() {
@@ -373,19 +382,24 @@ $(document).ready(function () {
             var $current = $current.prev('li');
             var $img = $current.find('img');
             var src = $img.attr('src');
-            var img = new Image();
-            img.src = src;
+            preloadImage($img);
         }
     }
     function animateFlipForward() {
-        cleanPages();
-        $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
-        animate('right', 2);
+        var $newBase = $container.find('li.current').next('li').next('li');
+        if ($newBase.length) {
+            cleanPages();
+            $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
+            animate('right', 2);
+        }
     }
     function animateFlipBackward() {
-        cleanPages();
-        $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
-        animate('left', -2);
+        var $newBase = $container.find('li.current').prev('li').prev('li');
+        if ($newBase.length) {
+            cleanPages();
+            $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
+            animate('left', -2);
+        }
     }
     function animateForward() {
         shiftCurrent(1);
@@ -394,6 +408,7 @@ $(document).ready(function () {
         shiftCurrent(-1);
     }
     refresh();
+    preloadImages();
     $('body').on('click', '.page-turn .nav-next-2', function () {
         animateFlipForward();
     }).on('click', '.page-turn .nav-prev-2', function () {

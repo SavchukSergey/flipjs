@@ -1,5 +1,8 @@
-$page-width: 210mm;
-$page-height: 297mm;
+//$page-width: 210mm;
+//$page-height: 297mm;
+$page-width: 2513px;
+$page-height: 3263px;
+
 $one-page-ratio: $page-width / $page-height;
 $one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
 $two-page-ratio: 2 * $page-width / $page-height;
@@ -8,7 +11,7 @@ $desktop-scaler-ratio: 93%;
 $desktop-scaler-margin: 2%;
 $tablet-scaler-ratio: 94%;
 $tablet-scaler-margin: 1%;
-$media-tablet-or-smaller: 'screen and (max-width: 767px)';
-$media-desktop-or-greater: 'screen and (min-width: 768px)';
+$media-tablet-or-smaller: 'screen and (max-width: 977px)';
+$media-desktop-or-greater: 'screen and (min-width: 980px)';
 $fill: 0.95;
 $arrow-stroke-color: #666;
