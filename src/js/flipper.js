@@ -122,6 +122,175 @@ function Vector2D(x, y) {
 $(document).ready(function () {
     var $container = $('.page-turn');
     var $scaler = $container.find('.scaler');
+    (function () {
+        var mouseDownStart;
+        var state = 'init';
+        var $target;
+        var $handle;
+        var cssBackup = {
+            zIndex: ''
+        };
+        var dragging = null;
+        function getMousePosition(ev) {
+            if (ev.type.indexOf('touch') >= 0) {
+                var touch = ev.originalEvent.touches[0];
+                if (touch) {
+                    return {
+                        x: touch.clientX,
+                        y: touch.clientY
+                    };
+                }
+                else {
+                    touch = ev.originalEvent.changedTouches[0];
+                    return {
+                        x: touch.clientX,
+                        y: touch.clientY
+                    };
+                }
+            }
+            return {
+                x: ev.clientX,
+                y: ev.clientY
+            };
+        }
+        function checkThreshold(a, b) {
+            var dx = a.x - b.x;
+            var dy = a.y - b.y;
+            var d = Math.sqrt(dx * dx + dy * dy);
+            return d > 5;
+        }
+        function getDragVector(ev) {
+            var pos = getMousePosition(ev);
+            return {
+                x: pos.x - mouseDownStart.x,
+                y: pos.y - mouseDownStart.y
+            };
+        }
+        function createDragArgs(ev) {
+            var vector = getDragVector(ev);
+            var pos = getMousePosition(ev);
+            var rect = $scaler[0].getBoundingClientRect();
+            var rel = {
+                x: pos.x - rect.left,
+                y: pos.y - rect.top
+            };
+            return {
+                rel: rel,
+                vector: vector,
+                position: pos,
+                pageX: ev.pageX,
+                pageY: ev.pageY,
+                $handle: $handle,
+                $target: $target,
+                event: ev
+            };
+        }
+        function createCssBackup() {
+            if (!$target)
+                debugger;
+            var target = $target[0];
+            if (!target)
+                return null;
+            return {
+                zIndex: target.style.zIndex
+            };
+        }
+        function restoreCss(backup) {
+            var target = $target[0];
+            if (target) {
+                target.style.zIndex = backup.zIndex;
+            }
+        }
+        function dragStart(ev) {
+            cssBackup = createCssBackup();
+            var dragArgs = createDragArgs(ev);
+            dragging = {};
+            var res = !dragging.start || dragging.start(dragArgs);
+            if (!res)
+                dragging = null;
+            return res;
+        }
+        function dragMove(ev) {
+            if (dragging) {
+                var args = createDragArgs(ev);
+                $handle.css({
+                    top: args.rel.y + 'px',
+                    left: args.rel.x + 'px',
+                });
+            }
+        }
+        function finalize() {
+        }
+        function dragEnd(ev) {
+            finalize();
+            if (dragging) {
+                if (dragging.stop)
+                    dragging.stop(createDragArgs(ev));
+                dragging = null;
+                restoreCss(cssBackup);
+            }
+        }
+        function dragCancel(ev) {
+            finalize();
+            if (dragging) {
+                dragging.cancel(createDragArgs(ev));
+                dragging = null;
+                restoreCss(cssBackup);
+            }
+        }
+        function dragCheck(ev, canCancel) {
+            if (state === 'drag') {
+                if (canCancel) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }
+                return dragMove(ev);
+            }
+            else if (state === 'threshold') {
+                var pos = getMousePosition(ev);
+                if (checkThreshold(mouseDownStart, pos)) {
+                    state = 'drag';
+                    var res = dragStart(ev);
+                    if (!res)
+                        state = 'init';
+                    return res;
+                }
+            }
+            return true;
+        }
+        $('html, body').on('mousedown touchstart', '.page-turn .corner', function (ev) {
+            var $evtarget = $(ev.target);
+            if (state === 'init') {
+                mouseDownStart = getMousePosition(ev);
+                ev.preventDefault();
+                ev.stopPropagation();
+                state = 'threshold';
+                $handle = $evtarget;
+                $target = $handle.closest('.corner');
+                $target = $target || $handle;
+            }
+        }).bind('mousemove touchmove', function (ev) {
+            return dragCheck(ev, true);
+        }).bind('mousewheel', function (ev) {
+            return dragCheck(ev, false);
+        }).bind('mouseup touchend', function (ev) {
+            if (state === 'drag') {
+                ev.preventDefault();
+                ev.stopPropagation();
+                dragEnd(ev);
+            }
+            else if (state === 'threshold') {
+                finalize();
+            }
+            state = 'init';
+        }).bind('keydown', function (ev) {
+            if (!dragging)
+                return;
+            if (ev.keyCode === 27) {
+                dragCancel(ev);
+            }
+        });
+    })();
     var touchCorner = 'right';
     var stage = 0;
     function setStage(corner, frame) {

@@ -174,3 +174,28 @@
 .page-turn.active-prev .page4 {
     right: 101;
 }
+
+.page-turn .corner {
+    display: block;
+    position: absolute;
+    width: 4em;
+    height: 4em;
+    background-color:  rgba(255, 0, 0, 0.5);
+    border-color:  rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+    z-index: 5000;
+    text-align: center;
+    line-height: 4em;
+    margin-top: -2em;
+    margin-left: -2em;
+
+    &.corner-br {
+        top: 100%;
+        left: 100%;
+    }
+
+    &.corner-bl {
+        top: 100%;
+        left: 0%;
+    }
+}
