@@ -1,19 +1,27 @@
-function Matrix2D(elements?: number[]) {
+class Matrix2D {
 
-    var self = this;
+    private m: number[];
 
-    var m = elements || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    constructor(elements?: number[]) {
+        this.m = elements || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    }
 
-    function determinant() {
-        var ax = m[0];
-        var ay = m[1];
-        var az = m[2];
-        var bx = m[3];
-        var by = m[4];
-        var bz = m[5];
-        var cx = m[6];
-        var cy = m[7];
-        var cz = m[8];
+    public transformVector(v: IVector2D) : IVector2D {
+        return new Vector2D(
+            v.x * this.m[0] + v.y * this.m[3] + this.m[6],
+            v.x * this.m[1] + v.y * this.m[4] + this.m[7]
+        );
+    }
+    public determinant() {
+        var ax = this.m[0];
+        var ay = this.m[1];
+        var az = this.m[2];
+        var bx = this.m[3];
+        var by = this.m[4];
+        var bz = this.m[5];
+        var cx = this.m[6];
+        var cy = this.m[7];
+        var cz = this.m[8];
 
         var dx = by * cz - bz * cy;
         var dy = bz * cx - bx * cz;
@@ -21,55 +29,55 @@ function Matrix2D(elements?: number[]) {
         return ax * dx + ay * dy + az * dz;
     }
 
-    function multiplyArray(other) {
+    private multiplyArray(other: number[]) {
         return new Matrix2D([
-            m[0] * other[0] + m[1] * other[3] + m[2] * other[6],
-            m[0] * other[1] + m[1] * other[4] + m[2] * other[7],
-            m[0] * other[2] + m[1] * other[5] + m[2] * other[8],
+            this.m[0] * other[0] + this.m[1] * other[3] + this.m[2] * other[6],
+            this.m[0] * other[1] + this.m[1] * other[4] + this.m[2] * other[7],
+            this.m[0] * other[2] + this.m[1] * other[5] + this.m[2] * other[8],
 
-            m[3] * other[0] + m[4] * other[3] + m[5] * other[6],
-            m[3] * other[1] + m[4] * other[4] + m[5] * other[7],
-            m[3] * other[2] + m[4] * other[5] + m[5] * other[8],
+            this.m[3] * other[0] + this.m[4] * other[3] + this.m[5] * other[6],
+            this.m[3] * other[1] + this.m[4] * other[4] + this.m[5] * other[7],
+            this.m[3] * other[2] + this.m[4] * other[5] + this.m[5] * other[8],
 
-            m[6] * other[0] + m[7] * other[3] + m[8] * other[6],
-            m[6] * other[1] + m[7] * other[4] + m[8] * other[7],
-            m[6] * other[2] + m[7] * other[5] + m[8] * other[8]
+            this.m[6] * other[0] + this.m[7] * other[3] + this.m[8] * other[6],
+            this.m[6] * other[1] + this.m[7] * other[4] + this.m[8] * other[7],
+            this.m[6] * other[2] + this.m[7] * other[5] + this.m[8] * other[8]
         ]);
     }
 
-    function multiply(other) {
-        return multiplyArray(other.getElements());
+    public multiply(other: Matrix2D): Matrix2D {
+        return this.multiplyArray(other.getElements());
     }
 
-    function translate(vector) {
-        return multiplyArray([1, 0, 0, 0, 1, 0, vector.x, vector.y, 1]);
+    public translate(vector: IVector2D): Matrix2D {
+        return this.multiplyArray([1, 0, 0, 0, 1, 0, vector.x, vector.y, 1]);
     }
 
-    function scale(kx, ky) {
-        return multiplyArray([kx, 0, 0, 0, ky, 0, 0, 0, 1]);
+    public scale(kx: number, ky: number): Matrix2D {
+        return this.multiplyArray([kx, 0, 0, 0, ky, 0, 0, 0, 1]);
     }
 
-    function rotate(deg) {
+    public rotate(deg: number): Matrix2D {
         var angle = deg * Math.PI / 180;
         var ca = Math.cos(angle);
         var sa = Math.sin(angle);
-        return multiplyArray([ca, sa, 0, -sa, ca, 0, 0, 0, 1]);
+        return this.multiplyArray([ca, sa, 0, -sa, ca, 0, 0, 0, 1]);
     }
 
-    function reverse() {
-        var det = determinant();
+    public reverse(): Matrix2D {
+        var det = this.determinant();
 
-        var ux = m[0];
-        var uy = m[3];
-        var uz = m[6];
+        var ux = this.m[0];
+        var uy = this.m[3];
+        var uz = this.m[6];
 
-        var vx = m[1];
-        var vy = m[4];
-        var vz = m[7];
+        var vx = this.m[1];
+        var vy = this.m[4];
+        var vz = this.m[7];
 
-        var wx = m[2];
-        var wy = m[5];
-        var wz = m[8];
+        var wx = this.m[2];
+        var wy = this.m[5];
+        var wz = this.m[8];
 
         var c11 = (vy * wz - wy * vz) / det;
         var c12 = (wy * uz - uy * wz) / det;
@@ -86,34 +94,16 @@ function Matrix2D(elements?: number[]) {
         return new Matrix2D([c11, c21, c31, c12, c22, c32, c13, c23, c33]);
     }
 
-    function getElements() {
-        return m.slice(0);
+    public getElements() {
+        return this.m.slice(0);
     }
 
-    function roundFloat(v) {
+    private roundFloat(v) {
         return Math.round(v * 1e8) / 1e8;
     }
 
-    function getTransformExpression() {
-        return `matrix(${roundFloat(m[0])}, ${roundFloat(m[1])}, ${roundFloat(m[3])}, ${roundFloat(m[4])}, ${roundFloat(m[6])}, ${roundFloat(m[7])})`;
+    public getTransformExpression() {
+        return `matrix(${this.roundFloat(this.m[0])}, ${this.roundFloat(this.m[1])}, ${this.roundFloat(this.m[3])}, ${this.roundFloat(this.m[4])}, ${this.roundFloat(this.m[6])}, ${this.roundFloat(this.m[7])})`;
     }
 
-    self.getElements = getElements;
-    self.getTransformExpression = getTransformExpression;
-    self.translate = translate;
-    self.scale = scale;
-    self.reverse = reverse;
-    self.rotate = rotate;
-    self.multiply = multiply;
-    self.determinant = determinant;
-}
-
-interface IMatrix2D {
-
-    getTransformExpression(): string;
-
-    reverse(): IMatrix2D;
-
-    multiply(other: IMatrix2D); IMatrix2D;
-    
 }

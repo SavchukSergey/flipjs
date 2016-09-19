@@ -198,4 +198,14 @@
         top: 100%;
         left: 0%;
     }
+
+    &.corner-tr {
+        top: 0%;
+        left: 100%;
+    }
+
+    &.corner-tl {
+        top: 0%;
+        left: 0%;
+    }
 }

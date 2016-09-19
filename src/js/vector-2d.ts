@@ -37,6 +37,10 @@ function Vector2D(x, y) {
         return this.changeLength(1);
     }
 
+    this.toString = function() {
+        return `{{${this.x}, ${this.y}}}`;
+    };
+
 }
 
 interface IVector2D {
@@ -48,6 +52,8 @@ interface IVector2D {
     rotateClockwise90(): IVector2D;
 
     changeLength(len: number): IVector2D;
+
+    mul(k: number) : IVector2D;
 
     length(): number;
 

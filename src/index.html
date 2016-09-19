@@ -6,7 +6,7 @@
 </head>
 
 <body>
-    <div class="page-turn debug2 one-page2">
+    <div class="page-turn debug one-page2">
         <div class="bg"></div>
         <div class="scaler">
             <ol>
@@ -100,6 +100,8 @@
             </ol>
             <a class="corner corner-br"></a>
             <a class="corner corner-bl"></a>
+            <a class="corner corner-tr"></a>
+            <a class="corner corner-tl"></a>
 
             <a class="fold-point-A fold-point debug-point">F</a>
             <a class="fold-point-B fold-point debug-point">G</a>
@@ -118,6 +120,11 @@
 
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
         crossorigin="anonymous"></script>
+        <script>
+            $(document).ready(function() {
+                $('ol li img').wrap($('<div class="wrapper" />'));
+            });
+            </script>
     <script src="js/flipper.js"></script>
 </body>
 

@@ -9,6 +9,55 @@ $(document).ready(function () {
     var $container = $('.page-turn');
     var $scaler = $container.find('.scaler');
 
+    var touchPointA: IVector2D;
+    var touchCorner = 'right';
+
+    function getCornerMatrix($corner): Matrix2D {
+        var screenHeight: number = $scaler.height();
+        var screenWidth: number = $scaler.width();
+
+        if ($corner.hasClass('corner-br')) {
+            return new Matrix2D().translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
+        }
+
+        if ($corner.hasClass('corner-bl')) {
+            return new Matrix2D().translate(new Vector2D(0, -screenHeight)).scale(1, -1);
+        }
+
+        if ($corner.hasClass('corner-tr')) {
+            return new Matrix2D().translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
+        }
+
+        if ($corner.hasClass('corner-tl')) {
+            return new Matrix2D().translate(new Vector2D(0, 0)).scale(1, 1);
+        }
+
+        return null;
+    }
+
+    function fixPointA(pointA: IVector2D): IVector2D {
+        var screenWidth: number = $scaler.width();
+        var screenHeight: number = $scaler.height();
+
+        var pageWidth = screenWidth / 2;
+        var pageHeight = screenHeight;
+
+        var spinPoint: IVector2D = new Vector2D(pageWidth, 0);
+        var dir = pointA.sub(spinPoint);
+        if (dir.length() > pageWidth) {
+            dir = dir.changeLength(pageWidth);
+            pointA = dir.add(spinPoint);
+        }
+        return pointA;
+    }
+
+    function easeInOutCubic(t: number, b: number, c: number, d: number) {
+        t /= d / 2;
+        if (t < 1) return c / 2 * t * t * t + b;
+        t -= 2;
+        return c / 2 * (t * t * t + 2) + b;
+    };
+
     (function () {
         var mouseDownStart;
         var state = 'init';
@@ -69,7 +118,7 @@ $(document).ready(function () {
                 y: pos.y - rect.top
             }
             return {
-                rel: rel,
+                rel: new Vector2D(rel.x, rel.y),
                 vector: vector,
                 position: pos,
                 pageX: ev.pageX,
@@ -110,6 +159,25 @@ $(document).ready(function () {
         function dragMove(ev) {
             if (dragging) {
                 var args = createDragArgs(ev);
+                var screenHeight: number = $scaler.height();
+                var screenWidth: number = $scaler.width();
+
+                var pageWidth = screenWidth / 2;
+                var pageHeight = screenHeight;
+
+                var cm = getCornerMatrix(args.$target);
+                var corner = new Vector2D(screenWidth, pageHeight);
+                touchPointA = cm.transformVector(args.rel);
+                var delta = 1;
+                $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
+                var $newBase = $container.find('li.current').next('li').next('li');
+                if ($newBase.length) {
+                    cleanPages();
+                    $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
+                }
+
+                refresh(touchPointA, null);
+
                 $handle.css({
                     top: args.rel.y + 'px',
                     left: args.rel.x + 'px',
@@ -194,7 +262,6 @@ $(document).ready(function () {
 
     })();
 
-    var touchCorner = 'right';
     var stage = 0;
 
     function setStage(corner, frame) {
@@ -205,14 +272,7 @@ $(document).ready(function () {
         stage = Math.max(0, stage);
     }
 
-    function easeInOutCubic(t, b, c, d) {
-        t /= d / 2;
-        if (t < 1) return c / 2 * t * t * t + b;
-        t -= 2;
-        return c / 2 * (t * t * t + 2) + b;
-    };
-
-    function calculateFold(stage: number): IFold {
+    function getPointAFromStage(stage: number) {
         var screenHeight: number = $scaler.height();
         var screenWidth: number = $scaler.width();
 
@@ -233,40 +293,68 @@ $(document).ready(function () {
         var dpx = dpl * Math.cos(angle);
         var dpy = dpl * Math.sin(angle);
 
-        var p = new Vector2D(fx - dpx, dpy);
+        var pointM = new Vector2D(fx - dpx, dpy);
 
-        var pointA = p.mul(2);
+        return pointM.mul(2);
+    }
+
+    function getFoldB(pointA: IVector2D, pointB: IVector2D) {
+        var screenHeight: number = $scaler.height();
+        var screenWidth: number = $scaler.width();
+
+        var pageWidth = screenWidth / 2;
+        var pageHeight = screenHeight;
+
+        var ba = pointB.sub(pointA);
+
+        var kx = -pointA.x / ba.x;
+        var ky = (pageHeight - pointA.y) / ba.y;
+
+        var k = Math.min(kx, ky, 1);
+        return ba.mul(k).add(pointA);
+        
+    }
+
+    function calculateFoldByCorner(pointA: IVector2D) {
+        var screenHeight: number = $scaler.height();
+        var screenWidth: number = $scaler.width();
+
+        var pageWidth = screenWidth / 2;
+        var pageHeight = screenHeight;
+
+        var pointM = pointA.mul(0.5);
+        var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
+
+        var ka = -pointM.y / symmetryLine.y;
+        var foldA = pointM.add(symmetryLine.mul(ka));
+
         var pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
         var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
         var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
-        var pointE: IVector2D = new Vector2D(0, 0);
-
-        var foldB = pointB;
-        if (foldB.x < 0) {
-            var ba = pointA.sub(pointB).changeLength(pageHeight);
-            var k = -pointA.x / ba.x;
-            ba = ba.mul(k);
-            foldB = ba.add(pointA);
-        } else {
-            var side = pointC.sub(pointB);
-            var crossLineY = pageHeight - pointB.y;
-
-            if (side.y != 0) {
-                var k = crossLineY / side.y;
-                foldB = side.mul(k).add(pointB);
-            } else {
-                foldB = pointC;
-            }
-        }
 
         return {
-            foldA: foldA,
-            foldB: foldB,
             pointA: pointA,
             pointB: pointB,
             pointC: pointC,
             pointD: pointD,
-            pointE: pointE
+            foldA: foldA,
+            foldB: getFoldB(pointA, pointB)
+        }
+    }
+
+    function calculateFold(stage: number): IFold {
+        var pointA = touchPointA;// getPointAFromStage(stage);
+        pointA = fixPointA(pointA);
+        var fold = calculateFoldByCorner(pointA);
+
+        return {
+            foldA: fold.foldA,
+            foldB: fold.foldB,
+            pointA: fold.pointA,
+            pointB: fold.pointB,
+            pointC: fold.pointC,
+            pointD: fold.pointD,
+            pointE: new Vector2D(0, 0)
         };
     }
 
@@ -316,7 +404,7 @@ $(document).ready(function () {
         debugPoint($('.point-e'), globalFold.pointE);
     }
 
-    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): IMatrix2D {
+    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): Matrix2D {
         var width = pointU.sub(pointO).length();
         var height = pointV.sub(pointO).length();
         var clipX = pointU.sub(pointO).changeLength(width / originalWidth);
@@ -324,7 +412,7 @@ $(document).ready(function () {
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
-    function setupPage($page, matrix: IMatrix2D, clipperMatrix: IMatrix2D) {
+    function setupPage($page, matrix: Matrix2D, clipperMatrix: Matrix2D) {
         $page.css({
             transform: clipperMatrix.getTransformExpression()
         })
@@ -348,7 +436,7 @@ $(document).ready(function () {
         }
     }
 
-    function refresh() {
+    function refresh(pointA: IVector2D, corner) {
         var screenHeight: number = $scaler.height();
         var screenWidth: number = $scaler.width();
 
