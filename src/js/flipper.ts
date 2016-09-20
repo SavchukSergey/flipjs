@@ -22,21 +22,15 @@ $(document).ready(function () {
     function getCornerType($corner: IJQueryNodes): string {
         if ($corner.hasClass('corner-br')) {
             return 'br';
-        }
-
-        if ($corner.hasClass('corner-bl')) {
+        } else if ($corner.hasClass('corner-bl')) {
             return 'bl';
-        }
-
-        if ($corner.hasClass('corner-tr')) {
+        } else if ($corner.hasClass('corner-tr')) {
             return 'tr';
-        }
-
-        if ($corner.hasClass('corner-tl')) {
+        } else if ($corner.hasClass('corner-tl')) {
             return 'tl';
+        } else {
+            return '';
         }
-
-        return '';
     }
 
     /**
@@ -46,15 +40,16 @@ $(document).ready(function () {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
+        var m = new Matrix2D();
         switch (corner) {
             case 'br':
-                return new Matrix2D().translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
+                return m.translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
             case 'bl':
-                return new Matrix2D().translate(new Vector2D(0, -screenHeight)).scale(1, -1);
+                return m.translate(new Vector2D(0, -screenHeight)).scale(1, -1);
             case 'tr':
-                return new Matrix2D().translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
+                return m.translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
             case 'tl':
-                return new Matrix2D().translate(new Vector2D(0, 0)).scale(1, 1);
+                return m.translate(new Vector2D(0, 0)).scale(1, 1);
         }
 
         return null;
@@ -69,15 +64,16 @@ $(document).ready(function () {
         var pageHeight = screenHeight;
         var pageWidth = screenWidth / 2;
 
+        var m = new Matrix2D();
         switch (corner) {
             case 'br':
-                return new Matrix2D().scale(1, -1).translate(new Vector2D(0, pageHeight));
+                return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
             case 'tr':
-                return new Matrix2D().scale(1, 1).translate(new Vector2D(0, 0));
+                return m.scale(1, 1).translate(new Vector2D(0, 0));
             case 'bl':
-                return new Matrix2D().scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
+                return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
             case 'tl':
-                return new Matrix2D().scale(-1, 1).translate(new Vector2D(pageWidth, 0));
+                return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
         }
     }
 
@@ -175,66 +171,43 @@ $(document).ready(function () {
     };
 
     (function () {
-        var mouseDownStart;
+        var mouseDownStart: IVector2D;
         var state = 'init';
         var $target: IJQueryNodes;
         var $handle: IJQueryNodes;
 
-        var cssBackup = {
-            zIndex: ''
-        };
-
         var dragging = null;
 
-        function getMousePosition(ev: IJQueryEvent) {
+        function getMousePosition(ev: IJQueryEvent): IVector2D {
             if (ev.type.indexOf('touch') >= 0) {
                 var touchEvent = <TouchEvent>ev.originalEvent
                 var touch = touchEvent.touches[0];
                 if (touch) {
-                    return {
-                        x: touch.clientX,
-                        y: touch.clientY
-                    };
+                    return new Vector2D(touch.clientX, touch.clientY);
                 } else {
                     touch = touchEvent.changedTouches[0];
-                    return {
-                        x: touch.clientX,
-                        y: touch.clientY
-                    };
+                    return new Vector2D(touch.clientX, touch.clientY);
                 }
             }
-            return {
-                x: ev.clientX,
-                y: ev.clientY
-            };
+            return new Vector2D(ev.clientX, ev.clientY);
         }
 
-        function checkThreshold(a, b) {
-            var dx = a.x - b.x;
-            var dy = a.y - b.y;
-            var d = Math.sqrt(dx * dx + dy * dy);
-            return d > 5;
+        function checkThreshold(a: IVector2D, b: IVector2D): boolean {
+            return a.sub(b).length() > 5;
         }
 
-        function getDragVector(ev) {
+        function getDragVector(ev: IJQueryEvent): IVector2D {
             var pos = getMousePosition(ev);
-
-            return {
-                x: pos.x - mouseDownStart.x,
-                y: pos.y - mouseDownStart.y
-            };
+            return pos.sub(mouseDownStart);
         }
 
         function createDragArgs(ev: IJQueryEvent) {
             var vector = getDragVector(ev);
             var pos = getMousePosition(ev);
             var rect = $scaler[0].getBoundingClientRect();
-            var rel = {
-                x: pos.x - rect.left,
-                y: pos.y - rect.top
-            }
+            var start = new Vector2D(rect.left, rect.top);
             return {
-                rel: new Vector2D(rel.x, rel.y),
+                rel: pos.sub(start),
                 vector: vector,
                 position: pos,
                 $handle: $handle,
@@ -243,24 +216,7 @@ $(document).ready(function () {
             };
         }
 
-        function createCssBackup() {
-            if (!$target) debugger;
-            var target = $target[0];
-            if (!target) return null;
-            return {
-                zIndex: target.style.zIndex
-            };
-        }
-
-        function restoreCss(backup) {
-            var target = $target[0];
-            if (target) {
-                target.style.zIndex = backup.zIndex;
-            }
-        }
-
-        function dragStart(ev) {
-            cssBackup = createCssBackup();
+        function dragStart(ev: IJQueryEvent) {
             var dragArgs = createDragArgs(ev);
             dragging = {
             };
@@ -270,7 +226,7 @@ $(document).ready(function () {
             return res;
         }
 
-        function dragMove(ev) {
+        function dragMove(ev: IJQueryEvent) {
             if (dragging) {
                 var args = createDragArgs(ev);
                 var screenHeight = $scaler.height();
@@ -285,7 +241,7 @@ $(document).ready(function () {
                 touchPointA = cm.transformVector(args.rel);
                 var delta = 1;
 
-                refresh(touchPointA, null);
+                refresh(touchPointA);
 
                 $handle.css({
                     top: args.rel.y + 'px',
@@ -302,8 +258,6 @@ $(document).ready(function () {
             if (dragging) {
                 if (dragging.stop) dragging.stop(createDragArgs(ev));
                 dragging = null;
-
-                restoreCss(cssBackup);
             }
         }
 
@@ -312,8 +266,6 @@ $(document).ready(function () {
             if (dragging) {
                 dragging.cancel(createDragArgs(ev));
                 dragging = null;
-
-                restoreCss(cssBackup);
             }
         }
 
@@ -382,8 +334,8 @@ $(document).ready(function () {
     }
 
     function getPointAFromStage(stage: number) {
-        var screenHeight: number = $scaler.height();
-        var screenWidth: number = $scaler.width();
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -408,8 +360,8 @@ $(document).ready(function () {
     }
 
     function getFoldB(pointA: IVector2D, pointB: IVector2D, pointC: IVector2D) {
-        var screenHeight: number = $scaler.height();
-        var screenWidth: number = $scaler.width();
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -470,43 +422,25 @@ $(document).ready(function () {
         };
     }
 
-    function getGlobalFold(fold: IFold): IFold {
-        function toGlobal(vector: IVector2D) {
-            return localToGlobalMatrix.transformVector(vector);
-        }
-
-        return {
-            foldA: toGlobal(fold.foldA),
-            foldB: toGlobal(fold.foldB),
-            pointA: toGlobal(fold.pointA),
-            pointB: toGlobal(fold.pointB),
-            pointC: toGlobal(fold.pointC),
-            pointD: toGlobal(fold.pointD),
-            pointE: toGlobal(fold.pointE)
-        };
-    }
-
     function dumpFold(localFold: IFold) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
-        var globalFold = getGlobalFold(localFold);
-
-
-        function debugPoint($point, vector: IVector2D) {
+        function debugPoint($point: IJQueryNodes, vector: IVector2D) {
+            vector = localToGlobalMatrix.transformVector(vector);
             $point.css({
                 left: (100 * vector.x / screenWidth) + '%',
                 top: (100 * vector.y / screenHeight) + '%'
             })
         }
 
-        debugPoint($('.fold-point-A'), globalFold.foldA);
-        debugPoint($('.fold-point-B'), globalFold.foldB);
-        debugPoint($('.point-a'), globalFold.pointA);
-        debugPoint($('.point-b'), globalFold.pointB);
-        debugPoint($('.point-c'), globalFold.pointC);
-        debugPoint($('.point-d'), globalFold.pointD);
-        debugPoint($('.point-e'), globalFold.pointE);
+        debugPoint($('.fold-point-A'), localFold.foldA);
+        debugPoint($('.fold-point-B'), localFold.foldB);
+        debugPoint($('.point-a'), localFold.pointA);
+        debugPoint($('.point-b'), localFold.pointB);
+        debugPoint($('.point-c'), localFold.pointC);
+        debugPoint($('.point-d'), localFold.pointD);
+        debugPoint($('.point-e'), localFold.pointE);
     }
 
     function setupImage($img, matrix: Matrix2D, clipA: IVector2D, clipB: IVector2D, clipC: IVector2D) {
@@ -531,15 +465,15 @@ $(document).ready(function () {
         })
     }
 
-    function getPageMatrix(globalFold: IFold) {
-        var pageXAxis = globalFold.pointD.sub(globalFold.pointA).normalize();
-        var pageYAxis = globalFold.pointB.sub(globalFold.pointA).normalize();
-        var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(globalFold.pointA);
+    function getPageMatrix(fold: IFold) {
+        var pageXAxis = fold.pointD.sub(fold.pointA).normalize();
+        var pageYAxis = fold.pointB.sub(fold.pointA).normalize();
+        var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointA);
 
         return localToTextureMatrix.multiply(pageMatrix);
     }
 
-    function refresh(pointA: IVector2D, corner) {
+    function refresh(pointA: IVector2D) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
@@ -548,11 +482,10 @@ $(document).ready(function () {
         var pageHeight = screenHeight;
 
         var localFold = calculateFold(stage);
-        var globalFold = getGlobalFold(localFold);
 
         dumpFold(localFold);
 
-        var frontPageMatrix = getPageMatrix(globalFold);
+        var frontPageMatrix = getPageMatrix(localFold).multiply(localToGlobalMatrix);
 
         var $frontPage = getFrontPage(touchCorner);
         var $backPage = getBackPage(touchCorner);
