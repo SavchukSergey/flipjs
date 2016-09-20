@@ -235,7 +235,7 @@ $(document).ready(function () {
         textureToLocalMatrix = localToTextureMatrix.reverse();
     }
     /**
-     * Check pointA to spine distance
+     * Check pointA to spine distance. We dont want page to be torn...
      */
     function fixPointA(pointA) {
         var screenWidth = $scaler.width();
@@ -325,8 +325,6 @@ $(document).ready(function () {
                 rel: new Vector2D(rel.x, rel.y),
                 vector: vector,
                 position: pos,
-                pageX: ev.pageX,
-                pageY: ev.pageY,
                 $handle: $handle,
                 $target: $target,
                 event: ev
@@ -536,9 +534,10 @@ $(document).ready(function () {
             pointE: toGlobal(fold.pointE)
         };
     }
-    function dumpFold(globalFold) {
+    function dumpFold(localFold) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
+        var globalFold = getGlobalFold(localFold);
         function debugPoint($point, vector) {
             $point.css({
                 left: (100 * vector.x / screenWidth) + '%',
@@ -556,10 +555,8 @@ $(document).ready(function () {
     function setupImage($img, matrix, clipA, clipB, clipC) {
     }
     function getOuterClipMatrix(pointO, pointU, pointV, originalWidth, originalHeight) {
-        var width = pointU.sub(pointO).length();
-        var height = pointV.sub(pointO).length();
-        var clipX = pointU.sub(pointO).changeLength(width / originalWidth);
-        var clipY = pointV.sub(pointO).changeLength(height / originalHeight);
+        var clipX = pointU.sub(pointO).mul(1 / originalWidth);
+        var clipY = pointV.sub(pointO).mul(1 / originalHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
     function setupPage($page, matrix, clipperMatrix) {
@@ -584,17 +581,30 @@ $(document).ready(function () {
         var pageHeight = screenHeight;
         var localFold = calculateFold(stage);
         var globalFold = getGlobalFold(localFold);
-        dumpFold(globalFold);
+        dumpFold(localFold);
         var frontPageMatrix = getPageMatrix(globalFold);
         var $frontPage = getFrontPage(touchCorner);
         var $backPage = getBackPage(touchCorner);
-        var clipperMatrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointA, globalFold.foldB, pageWidth, pageHeight);
+        var clipperMatrix;
+        if (localFold.foldA.x > localFold.foldB.x) {
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB, pageWidth, pageHeight);
+        }
+        else {
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA, pageWidth, pageHeight);
+        }
+        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
         setupPage($frontPage, frontPageMatrix, clipperMatrix);
-        var clipper2Matrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointE, globalFold.foldB, pageWidth, pageHeight);
+        var clipper2Matrix;
+        if (localFold.foldA.x > localFold.foldB.x) {
+            clipper2Matrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
+        }
+        else {
+            clipper2Matrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
+        }
+        clipper2Matrix = clipper2Matrix.multiply(localToGlobalMatrix);
         var spine = new Vector2D(pageWidth, 0);
         spine = textureToLocalMatrix.transformVector(spine);
         spine = localToGlobalMatrix.transformVector(spine);
-        console.log(spine.toString());
         var page4Matrix = new Matrix2D().translate(spine);
         setupPage($backPage, page4Matrix, clipper2Matrix);
     }

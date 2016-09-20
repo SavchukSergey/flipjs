@@ -7,11 +7,11 @@ function Vector2D(x, y) {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     };
 
-    this.sub = function (other) {
+    this.sub = function (other: IVector2D) {
         return new Vector2D(this.x - other.x, this.y - other.y);
     };
 
-    this.add = function (other) {
+    this.add = function (other: IVector2D) {
         return new Vector2D(this.x + other.x, this.y + other.y);
     };
 

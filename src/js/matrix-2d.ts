@@ -12,6 +12,7 @@ class Matrix2D {
             v.x * this.m[1] + v.y * this.m[4] + this.m[7]
         );
     }
+
     public determinant() {
         var ax = this.m[0];
         var ay = this.m[1];

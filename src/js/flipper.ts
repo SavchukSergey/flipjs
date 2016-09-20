@@ -131,13 +131,13 @@ $(document).ready(function () {
 
         globalToLocalMatrix = getCornerMatrix(corner);
         localToGlobalMatrix = globalToLocalMatrix.reverse();
-        
+
         localToTextureMatrix = getTextureMatrix(corner);
         textureToLocalMatrix = localToTextureMatrix.reverse();
     }
 
     /**
-     * Check pointA to spine distance
+     * Check pointA to spine distance. We dont want page to be torn...
      */
     function fixPointA(pointA: IVector2D): IVector2D {
         var screenWidth = $scaler.width();
@@ -152,7 +152,7 @@ $(document).ready(function () {
         if (diag.length() > maxDiag) {
             diag = diag.changeLength(maxDiag);
             pointA = diag.add(spinePointB);
-        } 
+        }
 
         var spinePointA: IVector2D = new Vector2D(pageWidth, 0);
         var dir = pointA.sub(spinePointA);
@@ -225,7 +225,7 @@ $(document).ready(function () {
             };
         }
 
-        function createDragArgs(ev) {
+        function createDragArgs(ev: IJQueryEvent) {
             var vector = getDragVector(ev);
             var pos = getMousePosition(ev);
             var rect = $scaler[0].getBoundingClientRect();
@@ -237,8 +237,6 @@ $(document).ready(function () {
                 rel: new Vector2D(rel.x, rel.y),
                 vector: vector,
                 position: pos,
-                pageX: ev.pageX,
-                pageY: ev.pageY,
                 $handle: $handle,
                 $target: $target,
                 event: ev
@@ -488,9 +486,12 @@ $(document).ready(function () {
         };
     }
 
-    function dumpFold(globalFold: IFold) {
+    function dumpFold(localFold: IFold) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
+
+        var globalFold = getGlobalFold(localFold);
+
 
         function debugPoint($point, vector: IVector2D) {
             $point.css({
@@ -513,10 +514,8 @@ $(document).ready(function () {
     }
 
     function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): Matrix2D {
-        var width = pointU.sub(pointO).length();
-        var height = pointV.sub(pointO).length();
-        var clipX = pointU.sub(pointO).changeLength(width / originalWidth);
-        var clipY = pointV.sub(pointO).changeLength(height / originalHeight);
+        var clipX = pointU.sub(pointO).mul(1 / originalWidth);
+        var clipY = pointV.sub(pointO).mul(1 / originalHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
@@ -545,28 +544,41 @@ $(document).ready(function () {
         var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
+
         var pageHeight = screenHeight;
 
         var localFold = calculateFold(stage);
         var globalFold = getGlobalFold(localFold);
 
-        dumpFold(globalFold);
+        dumpFold(localFold);
 
         var frontPageMatrix = getPageMatrix(globalFold);
 
         var $frontPage = getFrontPage(touchCorner);
         var $backPage = getBackPage(touchCorner);
 
-        var clipperMatrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointA, globalFold.foldB, pageWidth, pageHeight);
+        var clipperMatrix: Matrix2D;
+        if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB, pageWidth, pageHeight);
+        } else {
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA, pageWidth, pageHeight);
+        }
+        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
         setupPage($frontPage, frontPageMatrix, clipperMatrix);
 
 
-        var clipper2Matrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointE, globalFold.foldB, pageWidth, pageHeight);
+        var clipper2Matrix: Matrix2D;
+        if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
+            clipper2Matrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
+        } else {
+            clipper2Matrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
+        }
+        clipper2Matrix = clipper2Matrix.multiply(localToGlobalMatrix);
+
         var spine = new Vector2D(pageWidth, 0);
         spine = textureToLocalMatrix.transformVector(spine);
         spine = localToGlobalMatrix.transformVector(spine);
-        console.log(spine.toString());
         var page4Matrix = new Matrix2D().translate(spine);
         setupPage($backPage, page4Matrix, clipper2Matrix);
     }
