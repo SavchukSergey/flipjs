@@ -443,8 +443,17 @@ $(document).ready(function () {
         debugPoint($('.point-e'), localFold.pointE);
     }
 
-    function setupImage($img, matrix: Matrix2D, clipA: IVector2D, clipB: IVector2D, clipC: IVector2D) {
-
+    function setHandle(selector: string, x: number, y: number) {
+        $container.find(selector).css({
+            left: x + '%',
+            top: y + '%'
+        })
+    }
+    function setHandles() {
+        setHandle('.corner-tl', 0, 0);
+        setHandle('.corner-tr', 100, 0);
+        setHandle('.corner-bl', 0, 100);
+        setHandle('.corner-br', 100, 100);
     }
 
     function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): Matrix2D {
@@ -473,22 +482,16 @@ $(document).ready(function () {
         return localToTextureMatrix.multiply(pageMatrix);
     }
 
-    function refresh(pointA: IVector2D) {
+    function setupFrontPage(localFold: IFold) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
-
         var pageHeight = screenHeight;
 
-        var localFold = calculateFold(stage);
-
-        dumpFold(localFold);
+        var $frontPage = getFrontPage(touchCorner);
 
         var frontPageMatrix = getPageMatrix(localFold).multiply(localToGlobalMatrix);
-
-        var $frontPage = getFrontPage(touchCorner);
-        var $backPage = getBackPage(touchCorner);
 
         var clipperMatrix: Matrix2D;
         if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
@@ -499,21 +502,48 @@ $(document).ready(function () {
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
         setupPage($frontPage, frontPageMatrix, clipperMatrix);
+    }
 
+    function setupBackPage(localFold: IFold) {
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
 
-        var clipper2Matrix: Matrix2D;
-        if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
-            clipper2Matrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
-        } else {
-            clipper2Matrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
-        }
-        clipper2Matrix = clipper2Matrix.multiply(localToGlobalMatrix);
+        var pageWidth = screenWidth / 2;
+        var pageHeight = screenHeight;
+
+        var $backPage = getBackPage(touchCorner);
 
         var spine = new Vector2D(pageWidth, 0);
         spine = textureToLocalMatrix.transformVector(spine);
         spine = localToGlobalMatrix.transformVector(spine);
-        var page4Matrix = new Matrix2D().translate(spine);
-        setupPage($backPage, page4Matrix, clipper2Matrix);
+        var backPageMatrix = new Matrix2D().translate(spine);
+
+        var clipperMatrix: Matrix2D;
+        if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
+        } else {
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
+        }
+        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
+
+        setupPage($backPage, backPageMatrix, clipperMatrix);
+    }
+
+    function refresh(pointA: IVector2D) {
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
+
+        var pageWidth = screenWidth / 2;
+        var pageHeight = screenHeight;
+
+        var localFold = calculateFold(stage);
+
+        setupFrontPage(localFold);
+        setupBackPage(localFold);
+
+        dumpFold(localFold);
+
+        setHandles();
     }
 
     function cleanPages() {
