@@ -1,8 +1,7 @@
 ///<reference path="matrix-2d.ts" />
 ///<reference path="vector-2d.ts" />
 ///<reference path="fold.ts" />
-
-declare var $: any;
+///<reference path="jquery.d.ts" />
 
 $(document).ready(function () {
 
@@ -10,48 +9,165 @@ $(document).ready(function () {
     var $scaler = $container.find('.scaler');
 
     var touchPointA: IVector2D;
-    var touchCorner = 'right';
+    var touchCorner = '';
 
-    function getCornerMatrix($corner): Matrix2D {
-        var screenHeight: number = $scaler.height();
-        var screenWidth: number = $scaler.width();
+    var globalToLocalMatrix: Matrix2D;
+    var localToGlobalMatrix: Matrix2D;
+    var localToTextureMatrix: Matrix2D;
+    var textureToLocalMatrix: Matrix2D;
 
+    /**
+     * Get corner type by jquery node
+     */
+    function getCornerType($corner: IJQueryNodes): string {
         if ($corner.hasClass('corner-br')) {
-            return new Matrix2D().translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
+            return 'br';
         }
 
         if ($corner.hasClass('corner-bl')) {
-            return new Matrix2D().translate(new Vector2D(0, -screenHeight)).scale(1, -1);
+            return 'bl';
         }
 
         if ($corner.hasClass('corner-tr')) {
-            return new Matrix2D().translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
+            return 'tr';
         }
 
         if ($corner.hasClass('corner-tl')) {
-            return new Matrix2D().translate(new Vector2D(0, 0)).scale(1, 1);
+            return 'tl';
+        }
+
+        return '';
+    }
+
+    /**
+     * Get global to corner local coordinate system transformation matrix
+     */
+    function getCornerMatrix(corner: string): Matrix2D {
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
+
+        switch (corner) {
+            case 'br':
+                return new Matrix2D().translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
+            case 'bl':
+                return new Matrix2D().translate(new Vector2D(0, -screenHeight)).scale(1, -1);
+            case 'tr':
+                return new Matrix2D().translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
+            case 'tl':
+                return new Matrix2D().translate(new Vector2D(0, 0)).scale(1, 1);
         }
 
         return null;
     }
 
+    /**
+     * Get local to texture transform matrix
+     */
+    function getTextureMatrix(corner: string): Matrix2D {
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
+        var pageHeight = screenHeight;
+        var pageWidth = screenWidth / 2;
+
+        switch (corner) {
+            case 'br':
+                return new Matrix2D().scale(1, -1).translate(new Vector2D(0, pageHeight));
+            case 'tr':
+                return new Matrix2D().scale(1, 1).translate(new Vector2D(0, 0));
+            case 'bl':
+                return new Matrix2D().scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
+            case 'tl':
+                return new Matrix2D().scale(-1, 1).translate(new Vector2D(pageWidth, 0));
+        }
+    }
+
+    function getFrontPage(corner: string): IJQueryNodes {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return $container.find('.page3');
+            case 'bl':
+            case 'tl':
+                return $container.find('.page2');
+        }
+    }
+
+    function getBackPage(corner: string): IJQueryNodes {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return $container.find('.page4');
+            case 'bl':
+            case 'tl':
+                return $container.find('.page1');
+        }
+    }
+
+    function initCorner(corner: string) {
+        switch (corner) {
+            case 'tr':
+            case 'br':
+                $container.addClass('active').addClass('active-next').removeClass('active-prev');
+                var $newRightBase = $container.find('li.current').next('li').next('li');
+                if ($newRightBase.length) {
+                    cleanPages();
+                    $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
+                }
+                break;
+            case 'tl':
+            case 'bl':
+                $container.addClass('active').removeClass('active-next').addClass('active-prev');
+                var $newLeftBase = $container.find('li.current').prev('li').prev('li');
+                if ($newLeftBase.length) {
+                    cleanPages();
+                    $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
+                }
+                break;
+            default:
+                $container.removeClass('active').removeClass('active-next').removeClass('active-prev');
+                break;
+        }
+        touchCorner = corner;
+
+        globalToLocalMatrix = getCornerMatrix(corner);
+        localToGlobalMatrix = globalToLocalMatrix.reverse();
+        
+        localToTextureMatrix = getTextureMatrix(corner);
+        textureToLocalMatrix = localToTextureMatrix.reverse();
+    }
+
+    /**
+     * Check pointA to spine distance
+     */
     function fixPointA(pointA: IVector2D): IVector2D {
-        var screenWidth: number = $scaler.width();
-        var screenHeight: number = $scaler.height();
+        var screenWidth = $scaler.width();
+        var screenHeight = $scaler.height();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
 
-        var spinPoint: IVector2D = new Vector2D(pageWidth, 0);
-        var dir = pointA.sub(spinPoint);
+        var spinePointB: IVector2D = new Vector2D(pageWidth, pageHeight);
+        var maxDiag = spinePointB.length();
+        var diag = pointA.sub(spinePointB);
+        if (diag.length() > maxDiag) {
+            diag = diag.changeLength(maxDiag);
+            pointA = diag.add(spinePointB);
+        } 
+
+        var spinePointA: IVector2D = new Vector2D(pageWidth, 0);
+        var dir = pointA.sub(spinePointA);
         if (dir.length() > pageWidth) {
             dir = dir.changeLength(pageWidth);
-            pointA = dir.add(spinPoint);
+            pointA = dir.add(spinePointA);
         }
+
         return pointA;
     }
 
-    function easeInOutCubic(t: number, b: number, c: number, d: number) {
+    /**
+     * Easing function
+     */
+    function easeInOutCubic(t: number, b: number, c: number, d: number): number {
         t /= d / 2;
         if (t < 1) return c / 2 * t * t * t + b;
         t -= 2;
@@ -61,8 +177,8 @@ $(document).ready(function () {
     (function () {
         var mouseDownStart;
         var state = 'init';
-        var $target;
-        var $handle;
+        var $target: IJQueryNodes;
+        var $handle: IJQueryNodes;
 
         var cssBackup = {
             zIndex: ''
@@ -70,17 +186,17 @@ $(document).ready(function () {
 
         var dragging = null;
 
-        function getMousePosition(ev) {
+        function getMousePosition(ev: IJQueryEvent) {
             if (ev.type.indexOf('touch') >= 0) {
-
-                var touch = ev.originalEvent.touches[0];
+                var touchEvent = <TouchEvent>ev.originalEvent
+                var touch = touchEvent.touches[0];
                 if (touch) {
                     return {
                         x: touch.clientX,
                         y: touch.clientY
                     };
                 } else {
-                    touch = ev.originalEvent.changedTouches[0];
+                    touch = touchEvent.changedTouches[0];
                     return {
                         x: touch.clientX,
                         y: touch.clientY
@@ -159,22 +275,17 @@ $(document).ready(function () {
         function dragMove(ev) {
             if (dragging) {
                 var args = createDragArgs(ev);
-                var screenHeight: number = $scaler.height();
-                var screenWidth: number = $scaler.width();
+                var screenHeight = $scaler.height();
+                var screenWidth = $scaler.width();
 
                 var pageWidth = screenWidth / 2;
                 var pageHeight = screenHeight;
 
-                var cm = getCornerMatrix(args.$target);
-                var corner = new Vector2D(screenWidth, pageHeight);
+                var corner = getCornerType(args.$target);
+                initCorner(corner);
+                var cm = getCornerMatrix(corner);
                 touchPointA = cm.transformVector(args.rel);
                 var delta = 1;
-                $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
-                var $newBase = $container.find('li.current').next('li').next('li');
-                if ($newBase.length) {
-                    cleanPages();
-                    $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
-                }
 
                 refresh(touchPointA, null);
 
@@ -264,7 +375,7 @@ $(document).ready(function () {
 
     var stage = 0;
 
-    function setStage(corner, frame) {
+    function setStage(corner: string, frame) {
         touchCorner = corner;
         stage = frame;
 
@@ -298,7 +409,7 @@ $(document).ready(function () {
         return pointM.mul(2);
     }
 
-    function getFoldB(pointA: IVector2D, pointB: IVector2D) {
+    function getFoldB(pointA: IVector2D, pointB: IVector2D, pointC: IVector2D) {
         var screenHeight: number = $scaler.height();
         var screenWidth: number = $scaler.width();
 
@@ -308,16 +419,18 @@ $(document).ready(function () {
         var ba = pointB.sub(pointA);
 
         var kx = -pointA.x / ba.x;
-        var ky = (pageHeight - pointA.y) / ba.y;
+        if (kx >= 0 && kx <= 1) {
+            return ba.mul(kx).add(pointA);
+        }
 
-        var k = Math.min(kx, ky, 1);
-        return ba.mul(k).add(pointA);
-        
+        var cb = pointC.sub(pointB);
+        var ky = (pageHeight - pointB.y) / cb.y;
+        return cb.mul(ky).add(pointB);
     }
 
-    function calculateFoldByCorner(pointA: IVector2D) {
-        var screenHeight: number = $scaler.height();
-        var screenWidth: number = $scaler.width();
+    function calculateFoldByCorner(pointA: IVector2D): IFold {
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -337,8 +450,9 @@ $(document).ready(function () {
             pointB: pointB,
             pointC: pointC,
             pointD: pointD,
+            pointE: new Vector2D(0, 0),
             foldA: foldA,
-            foldB: getFoldB(pointA, pointB)
+            foldB: getFoldB(pointA, pointB, pointC)
         }
     }
 
@@ -354,23 +468,13 @@ $(document).ready(function () {
             pointB: fold.pointB,
             pointC: fold.pointC,
             pointD: fold.pointD,
-            pointE: new Vector2D(0, 0)
+            pointE: fold.pointE
         };
     }
 
     function getGlobalFold(fold: IFold): IFold {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
-        function toGlobal(vector) {
-            if (touchCorner == 'right') {
-                return new Vector2D(screenWidth - vector.x, screenHeight - vector.y);
-            } else if (touchCorner == 'left') {
-                return new Vector2D(vector.x, screenHeight - vector.y);
-            }
+        function toGlobal(vector: IVector2D) {
+            return localToGlobalMatrix.transformVector(vector);
         }
 
         return {
@@ -404,6 +508,10 @@ $(document).ready(function () {
         debugPoint($('.point-e'), globalFold.pointE);
     }
 
+    function setupImage($img, matrix: Matrix2D, clipA: IVector2D, clipB: IVector2D, clipC: IVector2D) {
+
+    }
+
     function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): Matrix2D {
         var width = pointU.sub(pointO).length();
         var height = pointV.sub(pointO).length();
@@ -425,20 +533,16 @@ $(document).ready(function () {
     }
 
     function getPageMatrix(globalFold: IFold) {
-        if (touchCorner == 'right') {
-            var page3XAxis = globalFold.pointC.sub(globalFold.pointB).normalize();
-            var page3YAxis = globalFold.pointA.sub(globalFold.pointB).normalize();
-            return new Matrix2D([page3XAxis.x, page3XAxis.y, 0, page3YAxis.x, page3YAxis.y, 0, 0, 0, 1]).translate(globalFold.pointB);
-        } else if (touchCorner == 'left') {
-            var page3XAxis = globalFold.pointB.sub(globalFold.pointC).normalize();
-            var page3YAxis = globalFold.pointD.sub(globalFold.pointC).normalize();
-            return new Matrix2D([page3XAxis.x, page3XAxis.y, 0, page3YAxis.x, page3YAxis.y, 0, 0, 0, 1]).translate(globalFold.pointC);
-        }
+        var pageXAxis = globalFold.pointD.sub(globalFold.pointA).normalize();
+        var pageYAxis = globalFold.pointB.sub(globalFold.pointA).normalize();
+        var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(globalFold.pointA);
+
+        return localToTextureMatrix.multiply(pageMatrix);
     }
 
     function refresh(pointA: IVector2D, corner) {
-        var screenHeight: number = $scaler.height();
-        var screenWidth: number = $scaler.width();
+        var screenHeight = $scaler.height();
+        var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
@@ -448,21 +552,23 @@ $(document).ready(function () {
 
         dumpFold(globalFold);
 
-        var pageMatrix = getPageMatrix(globalFold);
+        var frontPageMatrix = getPageMatrix(globalFold);
+
+        var $frontPage = getFrontPage(touchCorner);
+        var $backPage = getBackPage(touchCorner);
 
         var clipperMatrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointA, globalFold.foldB, pageWidth, pageHeight);
 
-        var clipper2Matrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointE, globalFold.foldB, pageWidth, pageHeight);
-        if (touchCorner == 'right') {
-            var page4Matrix = new Matrix2D().translate(new Vector2D(pageWidth, 0));
-            setupPage($('.page3'), pageMatrix, clipperMatrix);
-            setupPage($('.page4'), page4Matrix, clipper2Matrix);
-        } else if (touchCorner == 'left') {
-            var page1Matrix = new Matrix2D().translate(new Vector2D(0, 0));
+        setupPage($frontPage, frontPageMatrix, clipperMatrix);
 
-            setupPage($('.page2'), pageMatrix, clipperMatrix);
-            setupPage($('.page1'), page1Matrix, clipper2Matrix);
-        }
+
+        var clipper2Matrix = getOuterClipMatrix(globalFold.foldA, globalFold.pointE, globalFold.foldB, pageWidth, pageHeight);
+        var spine = new Vector2D(pageWidth, 0);
+        spine = textureToLocalMatrix.transformVector(spine);
+        spine = localToGlobalMatrix.transformVector(spine);
+        console.log(spine.toString());
+        var page4Matrix = new Matrix2D().translate(spine);
+        setupPage($backPage, page4Matrix, clipper2Matrix);
     }
 
     function cleanPages() {
@@ -521,7 +627,6 @@ $(document).ready(function () {
         touchCorner = corner;
 
         clean();
-        $container.addClass('active').toggleClass('active-next', delta > 0).toggleClass('active-prev', delta < 0);
 
         var frame = 0;
         var step = 4;
@@ -583,19 +688,17 @@ $(document).ready(function () {
     }
 
     function animateFlipForward() {
+        initCorner('br');
         var $newBase = $container.find('li.current').next('li').next('li');
         if ($newBase.length) {
-            cleanPages();
-            $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
             animate('right', 2);
         }
     }
 
     function animateFlipBackward() {
+        initCorner('bl');
         var $newBase = $container.find('li.current').prev('li').prev('li');
         if ($newBase.length) {
-            cleanPages();
-            $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
             animate('left', -2);
         }
     }
@@ -608,6 +711,7 @@ $(document).ready(function () {
         shiftCurrent(-1);
     }
 
+    shiftCurrent(2);
     refresh();
     preloadImages();
 

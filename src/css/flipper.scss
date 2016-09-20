@@ -35,6 +35,7 @@
 .page-turn {
     margin: 0 auto;
     overflow: hidden;
+    user-select: none;
 
     .bg {
         position: fixed;
@@ -144,18 +145,11 @@
         }
     }
 
-
-
 }
 
 
 .page-turn.active .page3 {
     left: 0;
-    z-index: 11;
-}
-
-.page-turn.active .page4 {
-    z-index: 10;
 }
 
 .page-turn.active-next .page4 {
@@ -163,17 +157,42 @@
 }
 
 
-.page-turn.active-prev .page1 {
-    z-index: 99;
+.page-turn.active-prev {
+    .page1 {
+        z-index: 99;
+    }
+
+    .page2 {
+        z-index: 100;
+    }
+
+    .page3 {
+        z-index: 98;
+    }
+
+    .page4 {
+        right: 97;
+    }
 }
 
-.page-turn.active-prev .page3 {
-    z-index: 97;
+.page-turn.active-next {
+    .page4 {
+        z-index: 99;
+    }
+
+    .page3 {
+        z-index: 100;
+    }
+
+    .page2 {
+        z-index: 98;
+    }
+
+    .page1 {
+        right: 97;
+    }
 }
 
-.page-turn.active-prev .page4 {
-    right: 101;
-}
 
 .page-turn .corner {
     display: block;

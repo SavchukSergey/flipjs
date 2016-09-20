@@ -38,7 +38,7 @@ function Vector2D(x, y) {
     }
 
     this.toString = function() {
-        return `{{${this.x}, ${this.y}}}`;
+        return `{${this.x}, ${this.y}}`;
     };
 
 }
