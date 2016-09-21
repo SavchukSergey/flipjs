@@ -8,6 +8,12 @@ $(document).ready(function () {
     var $container = $('.page-turn');
     var $scaler = $container.find('.scaler');
 
+    var $frontPage: IJQueryNodes;
+    var $backPage: IJQueryNodes;
+    var $frontPageImg: IJQueryNodes;
+    var $backPageImg: IJQueryNodes;
+
+
     var touchPointA: Vector2D;
     var touchCorner = '';
     var touchDelta = 0;
@@ -115,6 +121,12 @@ $(document).ready(function () {
         screenWidth = $scaler.width();
         pageHeight = screenHeight;
         pageWidth = screenWidth / 2;
+
+        $frontPage = getFrontPage(corner);
+        $backPage = getBackPage(corner);
+
+        $frontPageImg = $frontPage.find('img');
+        $backPageImg = $backPage.find('img');
 
         var $current = $container.find('li.current');
         switch (corner) {
@@ -235,12 +247,6 @@ $(document).ready(function () {
         function dragMove(ev: IJQueryEvent) {
             if (dragging) {
                 dragFold(ev);
-
-                var args = createDragArgs(ev);
-                $handle.css({
-                    top: ((args.rel.y / screenHeight) * 100) + '%',
-                    left: ((args.rel.x / screenWidth) * 100) + '%',
-                })
             }
         }
 
@@ -450,34 +456,20 @@ $(document).ready(function () {
         debugPoint($('.point-e'), localFold.pointE);
     }
 
-    function setHandle(selector: string, x: number, y: number) {
-        $container.find(selector).css({
-            left: x + '%',
-            top: y + '%'
-        })
-    }
-
-    function setHandles() {
-        setHandle('.corner-tl', 0, 0);
-        setHandle('.corner-tr', 100, 0);
-        setHandle('.corner-bl', 0, 100);
-        setHandle('.corner-br', 100, 100);
-    }
-
     function getOuterClipMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D, originalWidth: number, originalHeight: number): Matrix2D {
         var clipX = pointU.sub(pointO).mul(1 / originalWidth);
         var clipY = pointV.sub(pointO).mul(1 / originalHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
-    function setupPage($page, matrix: Matrix2D, clipperMatrix: Matrix2D) {
+    function setupPage($page: IJQueryNodes, $img: IJQueryNodes, matrix: Matrix2D, clipperMatrix: Matrix2D) {
         $page.css({
             transform: clipperMatrix.getTransformExpression()
         })
 
         matrix = matrix.multiply(clipperMatrix.reverse());
 
-        $page.find('img').css({
+        $img.css({
             transform: matrix.getTransformExpression()
         })
     }
@@ -491,14 +483,6 @@ $(document).ready(function () {
     }
 
     function setupFrontPage(localFold: IFold) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
-        var $frontPage = getFrontPage(touchCorner);
-
         var frontPageMatrix = getPageMatrix(localFold).multiply(localToGlobalMatrix);
 
         var clipperMatrix: Matrix2D;
@@ -509,18 +493,10 @@ $(document).ready(function () {
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
-        setupPage($frontPage, frontPageMatrix, clipperMatrix);
+        setupPage($frontPage, $frontPageImg, frontPageMatrix, clipperMatrix);
     }
 
     function setupBackPage(localFold: IFold) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
-        var $backPage = getBackPage(touchCorner);
-
         var spine = new Vector2D(pageWidth, 0);
         spine = textureToLocalMatrix.transformVector(spine);
         spine = localToGlobalMatrix.transformVector(spine);
@@ -534,7 +510,7 @@ $(document).ready(function () {
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
-        setupPage($backPage, backPageMatrix, clipperMatrix);
+        setupPage($backPage, $backPageImg, backPageMatrix, clipperMatrix);
     }
 
     function refresh(pointA: Vector2D) {
@@ -544,8 +520,6 @@ $(document).ready(function () {
         setupBackPage(localFold);
 
         dumpFold(localFold);
-
-        setHandles();
     }
 
     function cleanPages() {
