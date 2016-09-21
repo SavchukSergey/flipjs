@@ -6,7 +6,7 @@
         display: block;
         top: 0;
         bottom: 0;
-        width: 0;
+        width: 1.5em;
         z-index: 1000;
         background-color: rgba(0,0,0,0.5);
         font-size: 3em;
@@ -46,8 +46,7 @@
         }
     }
 
-    & .scaler:hover a.nav {
-        width: 1.5em;
+    a.nav:hover {
         opacity: 1;
     }
 

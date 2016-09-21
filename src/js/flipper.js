@@ -234,23 +234,22 @@ $(document).ready(function () {
         screenWidth = $scaler.width();
         pageHeight = screenHeight;
         pageWidth = screenWidth / 2;
+        var $current = $container.find('li.current');
         switch (corner) {
             case 'tr':
             case 'br':
                 $container.addClass('active').addClass('active-next').removeClass('active-prev');
-                var $newRightBase = $container.find('li.current').next('li').next('li');
-                if ($newRightBase.length) {
+                if ($container.find('li.current').next('li')) {
                     cleanPages();
-                    $container.find('li.current').addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
+                    $current.addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
                 }
                 break;
             case 'tl':
             case 'bl':
                 $container.addClass('active').removeClass('active-next').addClass('active-prev');
-                var $newLeftBase = $container.find('li.current').prev('li').prev('li');
-                if ($newLeftBase.length) {
+                if ($container.find('li.current').prev('li').length) {
                     cleanPages();
-                    $container.find('li.current').next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
+                    $current.next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
                 }
                 break;
             default:
@@ -303,9 +302,9 @@ $(document).ready(function () {
     (function () {
         var mouseDownStart;
         var state = 'init';
-        var $target;
         var $handle;
         var dragging = null;
+        var draggingPreview = null;
         function getMousePosition(ev) {
             if (ev.type.indexOf('touch') >= 0) {
                 var touchEvent = ev.originalEvent;
@@ -323,42 +322,39 @@ $(document).ready(function () {
         function checkThreshold(a, b) {
             return a.sub(b).length() > 5;
         }
-        function getDragVector(ev) {
-            var pos = getMousePosition(ev);
-            return pos.sub(mouseDownStart);
-        }
         function createDragArgs(ev) {
-            var vector = getDragVector(ev);
             var pos = getMousePosition(ev);
             var rect = $scaler[0].getBoundingClientRect();
             var start = new Vector2D(rect.left, rect.top);
             return {
                 rel: pos.sub(start),
-                vector: vector,
-                position: pos,
                 $handle: $handle,
-                $target: $target,
                 event: ev
             };
         }
         function dragStart(ev) {
             var dragArgs = createDragArgs(ev);
             dragging = {};
+            draggingPreview = null;
             return true;
         }
         function dragMove(ev) {
             if (dragging) {
+                dragFold(ev);
                 var args = createDragArgs(ev);
-                var corner = getCornerType(args.$target);
-                initCorner(corner);
-                var cm = getCornerMatrix(corner);
-                touchPointA = cm.transformVector(args.rel);
-                refresh(touchPointA);
                 $handle.css({
                     top: ((args.rel.y / screenHeight) * 100) + '%',
                     left: ((args.rel.x / screenWidth) * 100) + '%',
                 });
             }
+        }
+        function dragFold(ev) {
+            var args = createDragArgs(ev);
+            var corner = getCornerType(args.$handle);
+            initCorner(corner);
+            var cm = getCornerMatrix(corner);
+            touchPointA = cm.transformVector(args.rel);
+            refresh(touchPointA);
         }
         function dragAnimate(target) {
             var start = touchPointA;
@@ -420,10 +416,19 @@ $(document).ready(function () {
                 ev.preventDefault();
                 ev.stopPropagation();
                 state = 'threshold';
-                $handle = $evtarget;
-                $target = $handle.closest('.corner');
-                $target = $target || $handle;
+                $handle = $evtarget.closest('.corner');
             }
+        }).on('mousemove touchmove', '.page-turn .corner', function (ev) {
+            if (dragging)
+                return;
+            draggingPreview = {};
+            $handle = $(ev.target).closest('.corner');
+            dragFold(ev);
+        }).on('mouseout touchend', '.page-turn .corner', function (ev) {
+            if (!draggingPreview)
+                return;
+            draggingPreview = null;
+            dragAnimate(new Vector2D(0, 0));
         }).bind('mousemove touchmove', function (ev) {
             return dragCheck(ev, true);
         }).bind('mousewheel', function (ev) {
@@ -435,7 +440,7 @@ $(document).ready(function () {
                 dragEnd(ev);
             }
             else if (state === 'threshold') {
-                animateArrow(getCornerType($target));
+                animateArrow(getCornerType($handle));
             }
             state = 'init';
         }).bind('keydown', function (ev) {
@@ -613,6 +618,11 @@ $(document).ready(function () {
     function clean() {
         $container.removeClass('active').find('li').css('transform', '').find('img').css('transform', '');
     }
+    function refreshState() {
+        var $current = $container.find('li.current');
+        $container.toggleClass('can-prev-2', !!$current.prev('li').length);
+        $container.toggleClass('can-next-2', !!$current.next('li').length);
+    }
     function shiftCurrent(delta) {
         var $current = $container.find('li.current');
         var $currentOne = $container.find('li.current-one');
@@ -658,6 +668,7 @@ $(document).ready(function () {
             $node.addClass('current');
             $nodeOne.addClass('current-one');
         }
+        refreshState();
         preloadImages();
         return $node;
     }
@@ -729,18 +740,19 @@ $(document).ready(function () {
         }
     }
     function animateFlipForward() {
-        var $newBase = $container.find('li.current').next('li').next('li');
+        var $newBase = $container.find('li.current').next('li');
         if ($newBase.length) {
             animateArrow('br');
         }
     }
     function animateFlipBackward() {
-        var $newBase = $container.find('li.current').prev('li').prev('li');
+        var $newBase = $container.find('li.current').prev('li');
         if ($newBase.length) {
             animateArrow('bl');
         }
     }
     preloadImages();
+    refreshState();
     $('body').on('click', '.page-turn .nav-next-2', function () {
         animateFlipForward();
     }).on('click', '.page-turn .nav-prev-2', function () {
