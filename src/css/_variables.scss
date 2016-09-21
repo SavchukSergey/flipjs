@@ -3,6 +3,8 @@
 $page-width: 2513px;
 $page-height: 3263px;
 
+$corner-size: 8em;
+
 $one-page-ratio: $page-width / $page-height;
 $one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
 $two-page-ratio: 2 * $page-width / $page-height;

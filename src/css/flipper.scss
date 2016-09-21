@@ -195,18 +195,22 @@
 
 
 .page-turn .corner {
-    display: block;
+    display: none;
     position: absolute;
-    width: 4em;
-    height: 4em;
+    width: $corner-size;
+    height: $corner-size;
     background-color:  rgba(255, 0, 0, 0.5);
     border-color:  rgba(255, 0, 0, 0.8);
     border-radius: 50%;
     z-index: 5000;
     text-align: center;
-    line-height: 4em;
-    margin-top: -2em;
-    margin-left: -2em;
+    line-height: $corner-size;
+    margin-top: -$corner-size / 2;
+    margin-left: -$corner-size / 2;
+
+    @media #{$media-desktop-or-greater} {
+        display: block;
+    }
 
     &.corner-br {
         top: 100%;

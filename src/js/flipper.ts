@@ -17,6 +17,11 @@ $(document).ready(function () {
     var localToTextureMatrix: Matrix2D;
     var textureToLocalMatrix: Matrix2D;
 
+    var screenHeight = $scaler.height();
+    var screenWidth = $scaler.width();
+    var pageHeight = screenHeight;
+    var pageWidth = screenWidth / 2;
+
     /**
      * Get corner type by jquery node
      */
@@ -38,9 +43,6 @@ $(document).ready(function () {
      * Get global to corner local coordinate system transformation matrix
      */
     function getCornerMatrix(corner: string): Matrix2D {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
         var m = new Matrix2D();
         switch (corner) {
             case 'br':
@@ -73,11 +75,6 @@ $(document).ready(function () {
      * Get local to texture transform matrix
      */
     function getTextureMatrix(corner: string): Matrix2D {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-        var pageHeight = screenHeight;
-        var pageWidth = screenWidth / 2;
-
         var m = new Matrix2D();
         switch (corner) {
             case 'br':
@@ -114,6 +111,12 @@ $(document).ready(function () {
     }
 
     function initCorner(corner: string) {
+        screenHeight = $scaler.height();
+        screenWidth = $scaler.width();
+        pageHeight = screenHeight;
+        pageWidth = screenWidth / 2;
+
+
         switch (corner) {
             case 'tr':
             case 'br':
@@ -138,6 +141,7 @@ $(document).ready(function () {
                 break;
         }
         touchCorner = corner;
+        touchDelta = getCornerShift(corner);
 
         globalToLocalMatrix = getCornerMatrix(corner);
         localToGlobalMatrix = globalToLocalMatrix.reverse();
@@ -155,6 +159,8 @@ $(document).ready(function () {
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
+
+        if (pointA.length() < 10) pointA = new Vector2D(0, 0);
 
         var spinePointB = new Vector2D(pageWidth, pageHeight);
         var maxDiag = spinePointB.length();
@@ -239,17 +245,10 @@ $(document).ready(function () {
         function dragMove(ev: IJQueryEvent) {
             if (dragging) {
                 var args = createDragArgs(ev);
-                var screenHeight = $scaler.height();
-                var screenWidth = $scaler.width();
-
-                var pageWidth = screenWidth / 2;
-                var pageHeight = screenHeight;
-
                 var corner = getCornerType(args.$target);
                 initCorner(corner);
                 var cm = getCornerMatrix(corner);
                 touchPointA = cm.transformVector(args.rel);
-                touchDelta = getCornerShift(corner);
 
                 refresh(touchPointA);
 
@@ -263,7 +262,7 @@ $(document).ready(function () {
         function dragAnimate(target: Vector2D) {
             var start = touchPointA;
             var delta = target.sub(start);
-            return animate2((stage: number) => {
+            return animate((stage: number) => {
                 var vector = delta.mul(stage).add(start);
                 touchPointA = vector;
                 refresh(vector);
@@ -330,12 +329,13 @@ $(document).ready(function () {
             return dragCheck(ev, true);
         }).bind('mousewheel', function (ev) {
             return dragCheck(ev, false);
-        }).bind('mouseup touchend', function (ev) {
+        }).bind('mouseup touchend', function (ev: IJQueryEvent) {
             if (state === 'drag') {
                 ev.preventDefault();
                 ev.stopPropagation();
                 dragEnd(ev);
             } else if (state === 'threshold') {
+                animateArrow(getCornerType($target));
             }
             state = 'init';
         }).bind('keydown', function (ev) {
@@ -348,29 +348,11 @@ $(document).ready(function () {
 
     })();
 
-    var stage = 0;
-
-    function setStage(corner: string, frame) {
-        touchCorner = corner;
-        stage = frame;
-
-        stage = Math.min(1, stage);
-        stage = Math.max(0, stage);
-    }
-
-    function getPointAFromStage(stage: number) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
+    function getPointAFromStage(stage: number): Vector2D {
         var angle = 45 + 45 * stage; //symmetry line angle changes from 45 to 90.
         angle = angle * Math.PI / 180;
 
-        var x = easeInOutCubic(stage, 0, 1, 1);
-
-        var fx = x * pageWidth;
+        var fx = stage * pageWidth;
         var fy = 0;
 
         var foldA = new Vector2D(fx, fy);
@@ -385,14 +367,11 @@ $(document).ready(function () {
     }
 
     function getFoldB(pointA: Vector2D, pointB: Vector2D, pointC: Vector2D) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
         var ba = pointB.sub(pointA);
 
+        if (ba.x == 0) {
+            return new Vector2D(pointA.x, pageHeight);
+        }
         var kx = -pointA.x / ba.x;
         if (kx >= 0 && kx <= 1) {
             return ba.mul(kx).add(pointA);
@@ -404,19 +383,24 @@ $(document).ready(function () {
     }
 
     function calculateFoldByCorner(pointA: Vector2D): IFold {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
         var pointM = pointA.mul(0.5);
         var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
 
-        var ka = -pointM.y / symmetryLine.y;
-        var foldA = pointM.add(symmetryLine.mul(ka));
+        var foldA: Vector2D;
+        if (symmetryLine.y != 0) {
+            var ka = -pointM.y / symmetryLine.y;
+            foldA = pointM.add(symmetryLine.mul(ka));
+        } else {
+            foldA = new Vector2D(pointM.x, 0);
+        }
 
-        var pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
+        var pointB: Vector2D;
+        if (foldA.x == pointA.x && foldA.y == pointA.y) {
+            pointB = pointA.add(new Vector2D(0, pageHeight));
+        } else {
+            pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
+        }
+
         var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
         var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
 
@@ -448,9 +432,6 @@ $(document).ready(function () {
     }
 
     function dumpFold(localFold: IFold) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
         function debugPoint($point: IJQueryNodes, vector: Vector2D) {
             vector = localToGlobalMatrix.transformVector(vector);
             $point.css({
@@ -556,12 +537,6 @@ $(document).ready(function () {
     }
 
     function refresh(pointA: Vector2D) {
-        var screenHeight = $scaler.height();
-        var screenWidth = $scaler.width();
-
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
-
         var localFold = calculateFold();
 
         setupFrontPage(localFold);
@@ -626,7 +601,7 @@ $(document).ready(function () {
         return $node;
     }
 
-    function animate2(callback: { (stage: number) }) {
+    function animate(callback: { (stage: number) }) {
         var frame = 0;
         var step = 4;
 
@@ -652,30 +627,17 @@ $(document).ready(function () {
         return promise;
     }
 
-    function animate(corner: string, delta: number) {
-        touchCorner = corner;
-
-        clean();
-
-        var frame = 0;
-        var step = 4;
-
-        function draw() {
-            requestAnimationFrame(function () {
-                if (frame > 100) {
-                    cleanPages();
-                    clean();
-                    shiftCurrent(delta);
-                    return;
-                }
-                setStage(corner, frame / 100);
-                frame += step;
-                refresh();
-                draw();
-            });
-        }
-
-        draw();
+    function animateArrow(corner: string) {
+        initCorner(corner);
+        animate(stage => {
+            var pointA = getPointAFromStage(stage);
+            touchPointA = pointA;
+            refresh(touchPointA);
+        }).done(() => {
+            cleanPages();
+            clean();
+            shiftCurrent(touchDelta);
+        });
     }
 
     function preloadImages() {
@@ -685,9 +647,10 @@ $(document).ready(function () {
 
     var preloaders = {};
 
-    function preloadImage($img) {
+    function preloadImage($img: IJQueryNodes) {
         if (!$img.length) return;
-        var src = $img[0].src;
+        var imgNode = <HTMLImageElement>$img[0];
+        var src = imgNode.src;
         var img = new Image()
         img.src = src;
         img.onload = function () {
@@ -710,37 +673,24 @@ $(document).ready(function () {
         for (var i = 0; i < 3; i++) {
             var $current = $current.prev('li');
             var $img = $current.find('img');
-            var src = $img.attr('src');
             preloadImage($img);
         }
     }
 
     function animateFlipForward() {
-        initCorner('br');
         var $newBase = $container.find('li.current').next('li').next('li');
         if ($newBase.length) {
-            animate('right', 2);
+            animateArrow('br');
         }
     }
 
     function animateFlipBackward() {
-        initCorner('bl');
         var $newBase = $container.find('li.current').prev('li').prev('li');
         if ($newBase.length) {
-            animate('left', -2);
+            animateArrow('bl');
         }
     }
 
-    function animateForward() {
-        shiftCurrent(1);
-    }
-
-    function animateBackward() {
-        shiftCurrent(-1);
-    }
-
-    shiftCurrent(2);
-    refresh();
     preloadImages();
 
     $('body').on('click', '.page-turn .nav-next-2', () => {
@@ -748,9 +698,9 @@ $(document).ready(function () {
     }).on('click', '.page-turn .nav-prev-2', () => {
         animateFlipBackward();
     }).on('click', '.page-turn .nav-next', () => {
-        animateForward();
+        shiftCurrent(1);
     }).on('click', '.page-turn .nav-prev', () => {
-        animateBackward();
+        shiftCurrent(-1);
     });
 
 });
