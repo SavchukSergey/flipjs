@@ -81,40 +81,51 @@ var Matrix2D = (function () {
     };
     return Matrix2D;
 }());
-function Vector2D(x, y) {
-    this.x = x;
-    this.y = y;
-    this.length = function () {
+var Vector2D = (function () {
+    function Vector2D(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    Vector2D.prototype.length = function () {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     };
-    this.sub = function (other) {
+    ;
+    Vector2D.prototype.sub = function (other) {
         return new Vector2D(this.x - other.x, this.y - other.y);
     };
-    this.add = function (other) {
+    ;
+    Vector2D.prototype.add = function (other) {
         return new Vector2D(this.x + other.x, this.y + other.y);
     };
-    this.mul = function (val) {
+    ;
+    Vector2D.prototype.mul = function (val) {
         return new Vector2D(this.x * val, this.y * val);
     };
-    this.rotateClockwise90 = function () {
+    ;
+    Vector2D.prototype.rotateClockwise90 = function () {
         return new Vector2D(this.y, -this.x);
     };
-    this.rotateCounterClockwise90 = function () {
+    ;
+    Vector2D.prototype.rotateCounterClockwise90 = function () {
         return new Vector2D(-this.y, this.x);
     };
-    this.changeLength = function (val) {
+    ;
+    Vector2D.prototype.changeLength = function (val) {
         var len = this.length();
         if (!len)
             len = 1;
         return this.mul(val / len);
     };
-    this.normalize = function () {
+    ;
+    Vector2D.prototype.normalize = function () {
         return this.changeLength(1);
     };
-    this.toString = function () {
+    Vector2D.prototype.toString = function () {
         return "{" + this.x + ", " + this.y + "}";
     };
-}
+    ;
+    return Vector2D;
+}());
 ///<reference path="vector-2d.ts" />
 ///<reference path="matrix-2d.ts" />
 ///<reference path="vector-2d.ts" />
@@ -125,6 +136,7 @@ $(document).ready(function () {
     var $scaler = $container.find('.scaler');
     var touchPointA;
     var touchCorner = '';
+    var touchDelta = 0;
     var globalToLocalMatrix;
     var localToGlobalMatrix;
     var localToTextureMatrix;
@@ -167,6 +179,17 @@ $(document).ready(function () {
                 return m.translate(new Vector2D(0, 0)).scale(1, 1);
         }
         return null;
+    }
+    function getCornerShift(corner) {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return 2;
+            case 'bl':
+            case 'tl':
+                return -2;
+        }
+        return 0;
     }
     /**
      * Get local to texture transform matrix
@@ -316,10 +339,7 @@ $(document).ready(function () {
         function dragStart(ev) {
             var dragArgs = createDragArgs(ev);
             dragging = {};
-            var res = !dragging.start || dragging.start(dragArgs);
-            if (!res)
-                dragging = null;
-            return res;
+            return true;
         }
         function dragMove(ev) {
             if (dragging) {
@@ -332,28 +352,44 @@ $(document).ready(function () {
                 initCorner(corner);
                 var cm = getCornerMatrix(corner);
                 touchPointA = cm.transformVector(args.rel);
-                var delta = 1;
+                touchDelta = getCornerShift(corner);
                 refresh(touchPointA);
                 $handle.css({
-                    top: args.rel.y + 'px',
-                    left: args.rel.x + 'px',
+                    top: ((args.rel.y / screenHeight) * 100) + '%',
+                    left: ((args.rel.x / screenWidth) * 100) + '%',
                 });
             }
         }
-        function finalize() {
+        function dragAnimate(target) {
+            var start = touchPointA;
+            var delta = target.sub(start);
+            return animate2(function (stage) {
+                var vector = delta.mul(stage).add(start);
+                touchPointA = vector;
+                refresh(vector);
+            }).done(function () {
+                cleanPages();
+                clean();
+            });
         }
         function dragEnd(ev) {
-            finalize();
             if (dragging) {
-                if (dragging.stop)
-                    dragging.stop(createDragArgs(ev));
+                var screenWidth = $scaler.width();
+                var pageWidth = screenWidth / 2;
+                if (touchPointA.x > pageWidth) {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
+                        shiftCurrent(touchDelta);
+                    });
+                }
+                else {
+                    dragCancel(ev);
+                }
                 dragging = null;
             }
         }
         function dragCancel(ev) {
-            finalize();
             if (dragging) {
-                dragging.cancel(createDragArgs(ev));
+                dragAnimate(new Vector2D(0, 0));
                 dragging = null;
             }
         }
@@ -399,7 +435,6 @@ $(document).ready(function () {
                 dragEnd(ev);
             }
             else if (state === 'threshold') {
-                finalize();
             }
             state = 'init';
         }).bind('keydown', function (ev) {
@@ -470,7 +505,7 @@ $(document).ready(function () {
             foldB: getFoldB(pointA, pointB, pointC)
         };
     }
-    function calculateFold(stage) {
+    function calculateFold() {
         var pointA = touchPointA; // getPointAFromStage(stage);
         pointA = fixPointA(pointA);
         var fold = calculateFoldByCorner(pointA);
@@ -576,7 +611,7 @@ $(document).ready(function () {
         var screenWidth = $scaler.width();
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
-        var localFold = calculateFold(stage);
+        var localFold = calculateFold();
         setupFrontPage(localFold);
         setupBackPage(localFold);
         dumpFold(localFold);
@@ -633,7 +668,30 @@ $(document).ready(function () {
             $node.addClass('current');
             $nodeOne.addClass('current-one');
         }
+        preloadImages();
         return $node;
+    }
+    function animate2(callback) {
+        var frame = 0;
+        var step = 4;
+        callback(0);
+        var promise = $.Deferred();
+        function draw() {
+            requestAnimationFrame(function () {
+                frame += step;
+                frame = Math.min(frame, 100);
+                var x = easeInOutCubic(frame / 100, 0, 1, 1);
+                callback(x);
+                if (frame < 100) {
+                    draw();
+                }
+                else {
+                    promise.resolve();
+                }
+            });
+        }
+        draw();
+        return promise;
     }
     function animate(corner, delta) {
         touchCorner = corner;
@@ -646,7 +704,6 @@ $(document).ready(function () {
                     cleanPages();
                     clean();
                     shiftCurrent(delta);
-                    preloadImages();
                     return;
                 }
                 setStage(corner, frame / 100);

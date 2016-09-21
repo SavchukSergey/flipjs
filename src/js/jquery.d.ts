@@ -54,6 +54,13 @@ interface IJQueryEvent {
 
 }
 
+interface IJQueryPromise {
+    
+    resolve(data?: any) : IJQueryPromise;
+
+    done(data: {(data?: any)}) : IJQueryPromise;
+}
+
 interface IJQueryStatic {
 
     (selector: string): IJQueryNodes;
@@ -62,7 +69,11 @@ interface IJQueryStatic {
 
     (node: Node): IJQueryNodes;
 
+    Deferred(): IJQueryPromise;
+
 }
 
+
 declare var $: IJQueryStatic;
+
 

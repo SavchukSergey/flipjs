@@ -2,22 +2,22 @@
 
 interface IFold {
 
-    foldA: IVector2D;
+    foldA: Vector2D;
 
-    foldB: IVector2D;
+    foldB: Vector2D;
 
 
     /**
      * Touch corner position
      */
-    pointA: IVector2D;
+    pointA: Vector2D;
 
-    pointB: IVector2D;
+    pointB: Vector2D;
 
-    pointC: IVector2D;
+    pointC: Vector2D;
 
-    pointD: IVector2D;
+    pointD: Vector2D;
     
-    pointE: IVector2D;
+    pointE: Vector2D;
     
 }

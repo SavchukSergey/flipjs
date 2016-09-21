@@ -8,8 +8,9 @@ $(document).ready(function () {
     var $container = $('.page-turn');
     var $scaler = $container.find('.scaler');
 
-    var touchPointA: IVector2D;
+    var touchPointA: Vector2D;
     var touchCorner = '';
+    var touchDelta = 0;
 
     var globalToLocalMatrix: Matrix2D;
     var localToGlobalMatrix: Matrix2D;
@@ -53,6 +54,19 @@ $(document).ready(function () {
         }
 
         return null;
+    }
+
+    function getCornerShift(corner: string): number {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return 2;
+            case 'bl':
+            case 'tl':
+                return -2;
+        }
+
+        return 0;
     }
 
     /**
@@ -135,14 +149,14 @@ $(document).ready(function () {
     /**
      * Check pointA to spine distance. We dont want page to be torn...
      */
-    function fixPointA(pointA: IVector2D): IVector2D {
+    function fixPointA(pointA: Vector2D): Vector2D {
         var screenWidth = $scaler.width();
         var screenHeight = $scaler.height();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
 
-        var spinePointB: IVector2D = new Vector2D(pageWidth, pageHeight);
+        var spinePointB = new Vector2D(pageWidth, pageHeight);
         var maxDiag = spinePointB.length();
         var diag = pointA.sub(spinePointB);
         if (diag.length() > maxDiag) {
@@ -150,7 +164,7 @@ $(document).ready(function () {
             pointA = diag.add(spinePointB);
         }
 
-        var spinePointA: IVector2D = new Vector2D(pageWidth, 0);
+        var spinePointA = new Vector2D(pageWidth, 0);
         var dir = pointA.sub(spinePointA);
         if (dir.length() > pageWidth) {
             dir = dir.changeLength(pageWidth);
@@ -171,14 +185,14 @@ $(document).ready(function () {
     };
 
     (function () {
-        var mouseDownStart: IVector2D;
+        var mouseDownStart: Vector2D;
         var state = 'init';
         var $target: IJQueryNodes;
         var $handle: IJQueryNodes;
 
         var dragging = null;
 
-        function getMousePosition(ev: IJQueryEvent): IVector2D {
+        function getMousePosition(ev: IJQueryEvent): Vector2D {
             if (ev.type.indexOf('touch') >= 0) {
                 var touchEvent = <TouchEvent>ev.originalEvent
                 var touch = touchEvent.touches[0];
@@ -192,11 +206,11 @@ $(document).ready(function () {
             return new Vector2D(ev.clientX, ev.clientY);
         }
 
-        function checkThreshold(a: IVector2D, b: IVector2D): boolean {
+        function checkThreshold(a: Vector2D, b: Vector2D): boolean {
             return a.sub(b).length() > 5;
         }
 
-        function getDragVector(ev: IJQueryEvent): IVector2D {
+        function getDragVector(ev: IJQueryEvent): Vector2D {
             var pos = getMousePosition(ev);
             return pos.sub(mouseDownStart);
         }
@@ -218,12 +232,8 @@ $(document).ready(function () {
 
         function dragStart(ev: IJQueryEvent) {
             var dragArgs = createDragArgs(ev);
-            dragging = {
-            };
-
-            var res = !dragging.start || dragging.start(dragArgs);
-            if (!res) dragging = null;
-            return res;
+            dragging = {};
+            return true;
         }
 
         function dragMove(ev: IJQueryEvent) {
@@ -239,37 +249,53 @@ $(document).ready(function () {
                 initCorner(corner);
                 var cm = getCornerMatrix(corner);
                 touchPointA = cm.transformVector(args.rel);
-                var delta = 1;
+                touchDelta = getCornerShift(corner);
 
                 refresh(touchPointA);
 
                 $handle.css({
-                    top: args.rel.y + 'px',
-                    left: args.rel.x + 'px',
+                    top: ((args.rel.y / screenHeight) * 100) + '%',
+                    left: ((args.rel.x / screenWidth) * 100) + '%',
                 })
             }
         }
 
-        function finalize() {
+        function dragAnimate(target: Vector2D) {
+            var start = touchPointA;
+            var delta = target.sub(start);
+            return animate2((stage: number) => {
+                var vector = delta.mul(stage).add(start);
+                touchPointA = vector;
+                refresh(vector);
+            }).done(() => {
+                cleanPages();
+                clean();
+            });
         }
 
-        function dragEnd(ev) {
-            finalize();
+        function dragEnd(ev: IJQueryEvent) {
             if (dragging) {
-                if (dragging.stop) dragging.stop(createDragArgs(ev));
+                var screenWidth = $scaler.width();
+                var pageWidth = screenWidth / 2;
+                if (touchPointA.x > pageWidth) {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
+                        shiftCurrent(touchDelta);
+                    });
+                } else {
+                    dragCancel(ev);
+                }
                 dragging = null;
             }
         }
 
-        function dragCancel(ev) {
-            finalize();
+        function dragCancel(ev: IJQueryEvent) {
             if (dragging) {
-                dragging.cancel(createDragArgs(ev));
+                dragAnimate(new Vector2D(0, 0));
                 dragging = null;
             }
         }
 
-        function dragCheck(ev, canCancel) {
+        function dragCheck(ev: IJQueryEvent, canCancel: boolean): any {
             if (state === 'drag') {
                 if (canCancel) {
                     ev.preventDefault();
@@ -310,7 +336,6 @@ $(document).ready(function () {
                 ev.stopPropagation();
                 dragEnd(ev);
             } else if (state === 'threshold') {
-                finalize();
             }
             state = 'init';
         }).bind('keydown', function (ev) {
@@ -348,7 +373,7 @@ $(document).ready(function () {
         var fx = x * pageWidth;
         var fy = 0;
 
-        var foldA: IVector2D = new Vector2D(fx, fy);
+        var foldA = new Vector2D(fx, fy);
 
         var dpl = fx * Math.cos(angle);
         var dpx = dpl * Math.cos(angle);
@@ -359,7 +384,7 @@ $(document).ready(function () {
         return pointM.mul(2);
     }
 
-    function getFoldB(pointA: IVector2D, pointB: IVector2D, pointC: IVector2D) {
+    function getFoldB(pointA: Vector2D, pointB: Vector2D, pointC: Vector2D) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
@@ -378,7 +403,7 @@ $(document).ready(function () {
         return cb.mul(ky).add(pointB);
     }
 
-    function calculateFoldByCorner(pointA: IVector2D): IFold {
+    function calculateFoldByCorner(pointA: Vector2D): IFold {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
@@ -406,7 +431,7 @@ $(document).ready(function () {
         }
     }
 
-    function calculateFold(stage: number): IFold {
+    function calculateFold(): IFold {
         var pointA = touchPointA;// getPointAFromStage(stage);
         pointA = fixPointA(pointA);
         var fold = calculateFoldByCorner(pointA);
@@ -426,7 +451,7 @@ $(document).ready(function () {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
-        function debugPoint($point: IJQueryNodes, vector: IVector2D) {
+        function debugPoint($point: IJQueryNodes, vector: Vector2D) {
             vector = localToGlobalMatrix.transformVector(vector);
             $point.css({
                 left: (100 * vector.x / screenWidth) + '%',
@@ -449,6 +474,7 @@ $(document).ready(function () {
             top: y + '%'
         })
     }
+
     function setHandles() {
         setHandle('.corner-tl', 0, 0);
         setHandle('.corner-tr', 100, 0);
@@ -456,7 +482,7 @@ $(document).ready(function () {
         setHandle('.corner-br', 100, 100);
     }
 
-    function getOuterClipMatrix(pointO: IVector2D, pointU: IVector2D, pointV: IVector2D, originalWidth: number, originalHeight: number): Matrix2D {
+    function getOuterClipMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D, originalWidth: number, originalHeight: number): Matrix2D {
         var clipX = pointU.sub(pointO).mul(1 / originalWidth);
         var clipY = pointV.sub(pointO).mul(1 / originalHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
@@ -529,14 +555,14 @@ $(document).ready(function () {
         setupPage($backPage, backPageMatrix, clipperMatrix);
     }
 
-    function refresh(pointA: IVector2D) {
+    function refresh(pointA: Vector2D) {
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
 
         var pageWidth = screenWidth / 2;
         var pageHeight = screenHeight;
 
-        var localFold = calculateFold(stage);
+        var localFold = calculateFold();
 
         setupFrontPage(localFold);
         setupBackPage(localFold);
@@ -595,7 +621,35 @@ $(document).ready(function () {
             $nodeOne.addClass('current-one');
         }
 
+        preloadImages();
+
         return $node;
+    }
+
+    function animate2(callback: { (stage: number) }) {
+        var frame = 0;
+        var step = 4;
+
+        callback(0);
+
+        var promise = $.Deferred();
+        function draw() {
+            requestAnimationFrame(() => {
+                frame += step;
+                frame = Math.min(frame, 100);
+                var x = easeInOutCubic(frame / 100, 0, 1, 1);
+                callback(x)
+                if (frame < 100) {
+                    draw();
+                } else {
+                    promise.resolve();
+                }
+            });
+        }
+
+        draw();
+
+        return promise;
     }
 
     function animate(corner: string, delta: number) {
@@ -612,7 +666,6 @@ $(document).ready(function () {
                     cleanPages();
                     clean();
                     shiftCurrent(delta);
-                    preloadImages();
                     return;
                 }
                 setStage(corner, frame / 100);

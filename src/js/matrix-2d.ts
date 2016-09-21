@@ -6,7 +6,7 @@ class Matrix2D {
         this.m = elements || [1, 0, 0, 0, 1, 0, 0, 0, 1];
     }
 
-    public transformVector(v: IVector2D) : IVector2D {
+    public transformVector(v: Vector2D) : Vector2D {
         return new Vector2D(
             v.x * this.m[0] + v.y * this.m[3] + this.m[6],
             v.x * this.m[1] + v.y * this.m[4] + this.m[7]
@@ -50,7 +50,7 @@ class Matrix2D {
         return this.multiplyArray(other.getElements());
     }
 
-    public translate(vector: IVector2D): Matrix2D {
+    public translate(vector: Vector2D): Matrix2D {
         return this.multiplyArray([1, 0, 0, 0, 1, 0, vector.x, vector.y, 1]);
     }
 
