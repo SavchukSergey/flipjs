@@ -148,18 +148,9 @@
 }
 
 
-.page-turn.active .page3 {
-    left: 0;
-}
-
-.page-turn.active-next .page4 {
-    left: 0;
-}
-
-
 .page-turn.active-prev {
     .page1 {
-        z-index: 99;
+        z-index: 98;
     }
 
     .page2 {
@@ -167,17 +158,19 @@
     }
 
     .page3 {
-        z-index: 98;
+        z-index: 99;
     }
 
     .page4 {
-        right: 97;
+        right: 98;
     }
 }
 
 .page-turn.active-next {
+    
     .page4 {
-        z-index: 99;
+        z-index: 98;
+        left: 50%;
     }
 
     .page3 {
@@ -185,11 +178,12 @@
     }
 
     .page2 {
-        z-index: 98;
+        left: 0;
+        z-index: 99;
     }
 
     .page1 {
-        right: 97;
+        right: 98;
     }
 }
 

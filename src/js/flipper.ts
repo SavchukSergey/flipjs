@@ -86,13 +86,13 @@ $(document).ready(function () {
         var m = new Matrix2D();
         switch (corner) {
             case 'br':
-                return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
-            case 'tr':
-                return m.scale(1, 1).translate(new Vector2D(0, 0));
-            case 'bl':
                 return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
-            case 'tl':
+            case 'tr':
                 return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
+            case 'bl':
+                return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
+            case 'tl':
+                return m.scale(1, 1).translate(new Vector2D(0, 0));
         }
     }
 
@@ -135,14 +135,6 @@ $(document).ready(function () {
         pageHeight = screenHeight;
         pageWidth = screenWidth / 2;
 
-        $frontPage = getFrontPage(corner);
-        $backPage = getBackPage(corner);
-        $otherPage = getOtherPage(corner);
-
-        $frontPageImg = $frontPage.find('img');
-        $backPageImg = $backPage.find('img');
-        $otherPageImg = $otherPage.find('img');
-
         var $current = $container.find('li.current');
         switch (corner) {
             case 'tr':
@@ -165,6 +157,15 @@ $(document).ready(function () {
                 $container.removeClass('active').removeClass('active-next').removeClass('active-prev');
                 break;
         }
+
+        $frontPage = getFrontPage(corner);
+        $backPage = getBackPage(corner);
+        $otherPage = getOtherPage(corner);
+
+        $frontPageImg = $frontPage.find('img');
+        $backPageImg = $backPage.find('img');
+        $otherPageImg = $otherPage.find('img');
+
         touchCorner = corner;
         touchDelta = getCornerShift(corner);
 
@@ -474,28 +475,57 @@ $(document).ready(function () {
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
-    function setupPage($page: IJQueryNodes, $img: IJQueryNodes, matrix: Matrix2D, clipperMatrix: Matrix2D) {
+    /**
+     * Get trapezoid clipper matrix.
+     */
+    function getTrapezoidClipperMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D, pointW: Vector2D): Matrix2D {
+        var axisX = pointU.sub(pointO);
+        var axisY = pointV.sub(pointO);
+        var dirX = axisX.normalize();
+        var dirY = axisY.normalize();
+        var axisMatrix = new Matrix2D([dirX.x, dirX.y, 0, dirY.x, dirY.y, 0, 0, 0, 1]);
+
+        //make sure pointW is included into the matrix
+        var matrix = axisMatrix.translate(pointO);
+        var reverse = matrix.reverse();
+        var checkPoint = reverse.transformVector(pointW);
+
+        var kx = checkPoint.x / axisX.length();
+        var ky = checkPoint.y / axisY.length();
+        var k = Math.max(kx, ky, 1);
+        return axisMatrix.scale(k, k).translate(pointO);
+    }
+
+    /**
+     * Setups page using page martix and clipper matrix
+     * @param pageMatrix Page matrix in corner local coordinate system
+     * @param clipperMatrix Clipper matrix in corner local coordinate system
+     */
+    function setupPage($page: IJQueryNodes, $img: IJQueryNodes, pageMatrix: Matrix2D, clipperMatrix: Matrix2D) {
+        pageMatrix = pageMatrix.multiply(localToGlobalMatrix);
+        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
+
         $page.css({
             transform: clipperMatrix.getTransformExpression()
         })
 
-        matrix = matrix.multiply(clipperMatrix.reverse());
+        pageMatrix = pageMatrix.multiply(clipperMatrix.reverse()); //compensate clipper matrix
 
         $img.css({
-            transform: matrix.getTransformExpression()
+            transform: pageMatrix.getTransformExpression()
         })
     }
 
     function getPageMatrix(fold: IFold) {
-        var pageXAxis = fold.pointD.sub(fold.pointA).normalize();
-        var pageYAxis = fold.pointB.sub(fold.pointA).normalize();
-        var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointA);
+        var pageXAxis = fold.pointA.sub(fold.pointD).normalize();
+        var pageYAxis = fold.pointC.sub(fold.pointD).normalize();
+        var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointD);
 
-        return localToTextureMatrix.multiply(pageMatrix);
+        return textureToLocalMatrix.multiply(pageMatrix);
     }
 
     function setupFrontPage(localFold: IFold) {
-        var frontPageMatrix = getPageMatrix(localFold).multiply(localToGlobalMatrix);
+        var pageMatrix = getPageMatrix(localFold);
 
         var clipperMatrix: Matrix2D;
         if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
@@ -503,33 +533,32 @@ $(document).ready(function () {
         } else {
             clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA);
         }
-        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
-        setupPage($frontPage, $frontPageImg, frontPageMatrix, clipperMatrix);
+        setupPage($frontPage, $frontPageImg, pageMatrix, clipperMatrix);
     }
 
-    function setupBackPage(localFold: IFold) {
-        var spine = new Vector2D(pageWidth, 0);
-        spine = textureToLocalMatrix.transformVector(spine);
-        spine = localToGlobalMatrix.transformVector(spine);
-        var backPageMatrix = new Matrix2D().translate(spine);
+    function setupOtherPage(localFold: IFold) {
+        var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
+        shift = localToGlobalMatrix.transformVector(shift);
+        var pageMatrix = new Matrix2D().translate(shift).multiply(globalToLocalMatrix);
 
+        var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by >1 to avoid zero axis length
+        var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by >1 to avoid zero axis length
         var clipperMatrix: Matrix2D;
         if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
-            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB);
+            clipperMatrix = getTrapezoidClipperMatrix(localFold.foldA, spineA, localFold.foldB, spineB);
         } else {
-            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA);
+            clipperMatrix = getTrapezoidClipperMatrix(localFold.foldB, spineB, localFold.foldA, spineA);
         }
-        clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
-        setupPage($backPage, $backPageImg, backPageMatrix, clipperMatrix);
+        setupPage($otherPage, $otherPageImg, pageMatrix, clipperMatrix);
     }
 
     function refresh(pointA: Vector2D) {
         var localFold = calculateFold();
 
         setupFrontPage(localFold);
-        setupBackPage(localFold);
+        setupOtherPage(localFold);
 
         // dumpFold(localFold);
     }
