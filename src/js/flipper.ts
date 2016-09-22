@@ -456,9 +456,9 @@ $(document).ready(function () {
         debugPoint($('.point-e'), localFold.pointE);
     }
 
-    function getOuterClipMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D, originalWidth: number, originalHeight: number): Matrix2D {
-        var clipX = pointU.sub(pointO).mul(1 / originalWidth);
-        var clipY = pointV.sub(pointO).mul(1 / originalHeight);
+    function getOuterClipMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D): Matrix2D {
+        var clipX = pointU.sub(pointO).mul(1 / pageWidth);
+        var clipY = pointV.sub(pointO).mul(1 / pageHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
 
@@ -487,9 +487,9 @@ $(document).ready(function () {
 
         var clipperMatrix: Matrix2D;
         if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
-            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB);
         } else {
-            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA);
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
@@ -504,9 +504,9 @@ $(document).ready(function () {
 
         var clipperMatrix: Matrix2D;
         if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
-            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB);
         } else {
-            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA);
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
@@ -519,7 +519,7 @@ $(document).ready(function () {
         setupFrontPage(localFold);
         setupBackPage(localFold);
 
-        dumpFold(localFold);
+        // dumpFold(localFold);
     }
 
     function cleanPages() {

@@ -539,9 +539,9 @@ $(document).ready(function () {
         debugPoint($('.point-d'), localFold.pointD);
         debugPoint($('.point-e'), localFold.pointE);
     }
-    function getOuterClipMatrix(pointO, pointU, pointV, originalWidth, originalHeight) {
-        var clipX = pointU.sub(pointO).mul(1 / originalWidth);
-        var clipY = pointV.sub(pointO).mul(1 / originalHeight);
+    function getOuterClipMatrix(pointO, pointU, pointV) {
+        var clipX = pointU.sub(pointO).mul(1 / pageWidth);
+        var clipY = pointV.sub(pointO).mul(1 / pageHeight);
         return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
     }
     function setupPage($page, $img, matrix, clipperMatrix) {
@@ -563,10 +563,10 @@ $(document).ready(function () {
         var frontPageMatrix = getPageMatrix(localFold).multiply(localToGlobalMatrix);
         var clipperMatrix;
         if (localFold.foldA.x > localFold.foldB.x) {
-            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointA, localFold.foldB);
         }
         else {
-            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA);
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
         setupPage($frontPage, $frontPageImg, frontPageMatrix, clipperMatrix);
@@ -578,10 +578,10 @@ $(document).ready(function () {
         var backPageMatrix = new Matrix2D().translate(spine);
         var clipperMatrix;
         if (localFold.foldA.x > localFold.foldB.x) {
-            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldA, localFold.pointE, localFold.foldB);
         }
         else {
-            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA, pageWidth, pageHeight);
+            clipperMatrix = getOuterClipMatrix(localFold.foldB, new Vector2D(0, pageHeight), localFold.foldA);
         }
         clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
         setupPage($backPage, $backPageImg, backPageMatrix, clipperMatrix);
@@ -590,7 +590,7 @@ $(document).ready(function () {
         var localFold = calculateFold();
         setupFrontPage(localFold);
         setupBackPage(localFold);
-        dumpFold(localFold);
+        // dumpFold(localFold);
     }
     function cleanPages() {
         return $container.find('li').removeClass('page1 page2 page3 page4');
