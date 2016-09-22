@@ -112,16 +112,15 @@
 
     @media #{$media-desktop-or-greater} {
         &:not(.one-page) {
-            li.current:after {
-                background-image: -webkit-linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
-                background-image: -o-linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
-                background-image: linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
-            }
-
-            li.current + li:after {
-                background-image: -webkit-linear-gradient(right, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
-                background-image: -o-linear-gradient(right, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
-                background-image: linear-gradient(left, rgba(0,0,0,0) 95%, rgba(0,0,0,0.1) 98%, rgba(0,0,0,0.3) 100%);
+            .spineShadow {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 50%;
+                width: $spine-shadow-size;
+                margin-left: -$spine-shadow-size / 2;
+                z-index: 98;
+                background-image: -webkit-linear-gradient(right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.0) 100%);
             }
         }
     }
@@ -150,7 +149,7 @@
 
 .page-turn.active-prev {
     .page1 {
-        z-index: 98;
+        z-index: 90;
     }
 
     .page2 {
@@ -158,18 +157,18 @@
     }
 
     .page3 {
-        z-index: 99;
+        z-index: 95;
     }
 
     .page4 {
-        right: 98;
+        right: 90;
     }
 }
 
 .page-turn.active-next {
     
     .page4 {
-        z-index: 98;
+        z-index: 90;
         left: 50%;
     }
 
@@ -179,11 +178,11 @@
 
     .page2 {
         left: 0;
-        z-index: 99;
+        z-index: 95;
     }
 
     .page1 {
-        right: 98;
+        right: 95;
     }
 }
 

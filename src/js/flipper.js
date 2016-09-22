@@ -134,12 +134,12 @@ var Vector2D = (function () {
 $(document).ready(function () {
     var $container = $('.page-turn');
     var $scaler = $container.find('.scaler');
+    /** Front part of page being folded */
     var $frontPage;
-    var $backPage;
-    var $otherPage;
     var $frontPageImg;
+    /** Back part of page being folded */
+    var $backPage;
     var $backPageImg;
-    var $otherPageImg;
     var touchPointA;
     var touchCorner = '';
     var touchDelta = 0;
@@ -202,7 +202,7 @@ $(document).ready(function () {
     /**
      * Get local to texture transform matrix
      */
-    function getTextureMatrix(corner) {
+    function getLocalToTextureMatrix(corner) {
         var m = new Matrix2D();
         switch (corner) {
             case 'br':
@@ -215,7 +215,7 @@ $(document).ready(function () {
                 return m.scale(1, 1).translate(new Vector2D(0, 0));
         }
     }
-    function getFrontPage(corner) {
+    function getBackPage(corner) {
         switch (corner) {
             case 'br':
             case 'tr':
@@ -225,17 +225,7 @@ $(document).ready(function () {
                 return $container.find('.page2');
         }
     }
-    function getBackPage(corner) {
-        switch (corner) {
-            case 'br':
-            case 'tr':
-                return $container.find('.page4');
-            case 'bl':
-            case 'tl':
-                return $container.find('.page1');
-        }
-    }
-    function getOtherPage(corner) {
+    function getFrontPage(corner) {
         switch (corner) {
             case 'br':
             case 'tr':
@@ -274,25 +264,19 @@ $(document).ready(function () {
         }
         $frontPage = getFrontPage(corner);
         $backPage = getBackPage(corner);
-        $otherPage = getOtherPage(corner);
         $frontPageImg = $frontPage.find('img');
         $backPageImg = $backPage.find('img');
-        $otherPageImg = $otherPage.find('img');
         touchCorner = corner;
         touchDelta = getCornerShift(corner);
         globalToLocalMatrix = getCornerMatrix(corner);
         localToGlobalMatrix = globalToLocalMatrix.reverse();
-        localToTextureMatrix = getTextureMatrix(corner);
+        localToTextureMatrix = getLocalToTextureMatrix(corner);
         textureToLocalMatrix = localToTextureMatrix.reverse();
     }
     /**
      * Check pointA to spine distance. We dont want page to be torn...
      */
     function fixPointA(pointA) {
-        var screenWidth = $scaler.width();
-        var screenHeight = $scaler.height();
-        var pageWidth = screenWidth / 2;
-        var pageHeight = screenHeight;
         if (pointA.length() < 10)
             pointA = new Vector2D(0, 0);
         var spinePointB = new Vector2D(pageWidth, pageHeight);
@@ -603,7 +587,7 @@ $(document).ready(function () {
         else {
             clipperMatrix = getOuterClipMatrix(localFold.foldB, localFold.pointB, localFold.foldA);
         }
-        setupPage($frontPage, $frontPageImg, pageMatrix, clipperMatrix);
+        setupPage($backPage, $backPageImg, pageMatrix, clipperMatrix);
     }
     function setupOtherPage(localFold) {
         var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
@@ -618,7 +602,7 @@ $(document).ready(function () {
         else {
             clipperMatrix = getTrapezoidClipperMatrix(localFold.foldB, spineB, localFold.foldA, spineA);
         }
-        setupPage($otherPage, $otherPageImg, pageMatrix, clipperMatrix);
+        setupPage($frontPage, $frontPageImg, pageMatrix, clipperMatrix);
     }
     function refresh(pointA) {
         var localFold = calculateFold();
