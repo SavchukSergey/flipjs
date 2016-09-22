@@ -10,8 +10,10 @@ $(document).ready(function () {
 
     var $frontPage: IJQueryNodes;
     var $backPage: IJQueryNodes;
+    var $otherPage: IJQueryNodes;
     var $frontPageImg: IJQueryNodes;
     var $backPageImg: IJQueryNodes;
+    var $otherPageImg: IJQueryNodes;
 
 
     var touchPointA: Vector2D;
@@ -116,6 +118,17 @@ $(document).ready(function () {
         }
     }
 
+    function getOtherPage(corner: string): IJQueryNodes {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return $container.find('.page2');
+            case 'bl':
+            case 'tl':
+                return $container.find('.page3');
+        }
+    }
+
     function initCorner(corner: string) {
         screenHeight = $scaler.height();
         screenWidth = $scaler.width();
@@ -124,9 +137,11 @@ $(document).ready(function () {
 
         $frontPage = getFrontPage(corner);
         $backPage = getBackPage(corner);
+        $otherPage = getOtherPage(corner);
 
         $frontPageImg = $frontPage.find('img');
         $backPageImg = $backPage.find('img');
+        $otherPageImg = $otherPage.find('img');
 
         var $current = $container.find('li.current');
         switch (corner) {
@@ -211,13 +226,8 @@ $(document).ready(function () {
         function getMousePosition(ev: IJQueryEvent): Vector2D {
             if (ev.type.indexOf('touch') >= 0) {
                 var touchEvent = <TouchEvent>ev.originalEvent
-                var touch = touchEvent.touches[0];
-                if (touch) {
-                    return new Vector2D(touch.clientX, touch.clientY);
-                } else {
-                    touch = touchEvent.changedTouches[0];
-                    return new Vector2D(touch.clientX, touch.clientY);
-                }
+                var touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+                return new Vector2D(touch.clientX, touch.clientY);
             }
             return new Vector2D(ev.clientX, ev.clientY);
         }
@@ -238,7 +248,10 @@ $(document).ready(function () {
         }
 
         function dragStart(ev: IJQueryEvent) {
-            var dragArgs = createDragArgs(ev);
+            var args = createDragArgs(ev);
+            var corner = getCornerType(args.$handle);
+            initCorner(corner);
+
             dragging = {};
             draggingPreview = null;
             return true;
@@ -252,11 +265,7 @@ $(document).ready(function () {
 
         function dragFold(ev: IJQueryEvent) {
             var args = createDragArgs(ev);
-            var corner = getCornerType(args.$handle);
-            initCorner(corner);
-            var cm = getCornerMatrix(corner);
-            touchPointA = cm.transformVector(args.rel);
-
+            touchPointA = globalToLocalMatrix.transformVector(args.rel);
             refresh(touchPointA);
         }
 
@@ -327,6 +336,9 @@ $(document).ready(function () {
             if (dragging) return;
             draggingPreview = {};
             $handle = $(ev.target).closest('.corner');
+            var args = createDragArgs(ev);
+            var corner = getCornerType(args.$handle);
+            initCorner(corner);
             dragFold(ev);
         }).on('mouseout touchend', '.page-turn .corner', function (ev) {
             if (!draggingPreview) return;

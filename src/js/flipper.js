@@ -136,8 +136,10 @@ $(document).ready(function () {
     var $scaler = $container.find('.scaler');
     var $frontPage;
     var $backPage;
+    var $otherPage;
     var $frontPageImg;
     var $backPageImg;
+    var $otherPageImg;
     var touchPointA;
     var touchCorner = '';
     var touchDelta = 0;
@@ -233,6 +235,16 @@ $(document).ready(function () {
                 return $container.find('.page1');
         }
     }
+    function getOtherPage(corner) {
+        switch (corner) {
+            case 'br':
+            case 'tr':
+                return $container.find('.page2');
+            case 'bl':
+            case 'tl':
+                return $container.find('.page3');
+        }
+    }
     function initCorner(corner) {
         screenHeight = $scaler.height();
         screenWidth = $scaler.width();
@@ -240,8 +252,10 @@ $(document).ready(function () {
         pageWidth = screenWidth / 2;
         $frontPage = getFrontPage(corner);
         $backPage = getBackPage(corner);
+        $otherPage = getOtherPage(corner);
         $frontPageImg = $frontPage.find('img');
         $backPageImg = $backPage.find('img');
+        $otherPageImg = $otherPage.find('img');
         var $current = $container.find('li.current');
         switch (corner) {
             case 'tr':
@@ -316,14 +330,8 @@ $(document).ready(function () {
         function getMousePosition(ev) {
             if (ev.type.indexOf('touch') >= 0) {
                 var touchEvent = ev.originalEvent;
-                var touch = touchEvent.touches[0];
-                if (touch) {
-                    return new Vector2D(touch.clientX, touch.clientY);
-                }
-                else {
-                    touch = touchEvent.changedTouches[0];
-                    return new Vector2D(touch.clientX, touch.clientY);
-                }
+                var touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+                return new Vector2D(touch.clientX, touch.clientY);
             }
             return new Vector2D(ev.clientX, ev.clientY);
         }
@@ -341,7 +349,9 @@ $(document).ready(function () {
             };
         }
         function dragStart(ev) {
-            var dragArgs = createDragArgs(ev);
+            var args = createDragArgs(ev);
+            var corner = getCornerType(args.$handle);
+            initCorner(corner);
             dragging = {};
             draggingPreview = null;
             return true;
@@ -353,10 +363,7 @@ $(document).ready(function () {
         }
         function dragFold(ev) {
             var args = createDragArgs(ev);
-            var corner = getCornerType(args.$handle);
-            initCorner(corner);
-            var cm = getCornerMatrix(corner);
-            touchPointA = cm.transformVector(args.rel);
+            touchPointA = globalToLocalMatrix.transformVector(args.rel);
             refresh(touchPointA);
         }
         function dragAnimate(target) {
@@ -426,6 +433,9 @@ $(document).ready(function () {
                 return;
             draggingPreview = {};
             $handle = $(ev.target).closest('.corner');
+            var args = createDragArgs(ev);
+            var corner = getCornerType(args.$handle);
+            initCorner(corner);
             dragFold(ev);
         }).on('mouseout touchend', '.page-turn .corner', function (ev) {
             if (!draggingPreview)
