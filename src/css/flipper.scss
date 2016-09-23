@@ -4,6 +4,12 @@
 @import '_debug.scss';
 
 .page-turn {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+
     @media #{$media-desktop-or-greater} {
         @media (max-aspect-ratio: $two-page-ratio-string) { 
             width: $fill * 100vw;
@@ -13,7 +19,6 @@
         @media (min-aspect-ratio: $two-page-ratio-string) { 
             width: $fill * 100vh * $two-page-ratio;
             height: $fill * 100vh;
-            margin-top: (1 - $fill) * 100vh / 2 !important;
         }
     } 
 
@@ -23,10 +28,10 @@
             width: $fill * 100vw;
             height: $fill * 100vw / $one-page-ratio;
         }
+
         @media (min-aspect-ratio: $one-page-ratio-string) { 
             width: $fill * 100vh * $one-page-ratio;
             height: $fill * 100vh;
-            margin-top: (1 - $fill) * 100vh / 2 !important;
         }
     }
 
@@ -79,6 +84,10 @@
         width: 50%;
         height: 100%;
         display: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     img {
@@ -111,7 +120,7 @@
     }
 
     @media #{$media-desktop-or-greater} {
-        &:not(.one-page) {
+        &.two-sides {
             .spineShadow {
                 position: absolute;
                 top: 0;
@@ -121,6 +130,8 @@
                 margin-left: -$spine-shadow-size / 2;
                 z-index: 98;
                 background-image: -webkit-linear-gradient(right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.0) 100%);
+                background-image: -o-linear-gradient(right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.0) 100%);
+                background-image: linear-gradient(to left, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.0) 100%);
             }
         }
     }
@@ -161,7 +172,7 @@
     }
 
     .page4 {
-        right: 90;
+        z-index: 90;
     }
 }
 
@@ -182,7 +193,7 @@
     }
 
     .page1 {
-        right: 95;
+        z-index: 95;
     }
 }
 

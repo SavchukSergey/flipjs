@@ -56,6 +56,8 @@ interface IJQueryEvent {
 
 interface IJQueryPromise {
     
+    reject(data?: any) : IJQueryPromise;
+
     resolve(data?: any) : IJQueryPromise;
 
     done(data: {(data?: any)}) : IJQueryPromise;
@@ -70,6 +72,8 @@ interface IJQueryStatic {
     (node: Node): IJQueryNodes;
 
     Deferred(): IJQueryPromise;
+
+    fn: any;
 
 }
 
