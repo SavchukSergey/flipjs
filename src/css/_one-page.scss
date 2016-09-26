@@ -10,13 +10,22 @@
                 display: none !important;
                 left: 0 !important;
                 width: 100%;
-
-                &.current-one {
-                    display: block !important;
-                }
             }
 
         }
+
+        &.one-side-left {
+            li.page-a {
+                display: block !important;
+            }
+        }
+
+        &.one-side-right {
+            li.page-b {
+                display: block !important;
+            }
+        }
+
     }
 
     @media #{$media-tablet-or-smaller} {
@@ -25,11 +34,20 @@
                 display: none !important;
                 left: 0 !important;
                 width: 100%;
-
-                &.current-one {
-                    display: block !important;
-                }
             }
         }
+
+        &.one-side-left {
+            li.page-a {
+                display: block !important;
+            }
+        }
+
+        &.one-side-right {
+            li.page-b {
+                display: block !important;
+            }
+        }
+
     }
 }

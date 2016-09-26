@@ -9,6 +9,7 @@
     left: 0;
     bottom: 0;
     right: 0;
+    z-index: 100;
 
     @media #{$media-desktop-or-greater} {
         @media (max-aspect-ratio: $two-page-ratio-string) { 
@@ -41,6 +42,15 @@
     margin: 0 auto;
     overflow: hidden;
     user-select: none;
+
+    &.hash {
+
+        display: none;
+
+        &.opened {
+            display: block;
+        }
+    }
 
     .bg {
         position: fixed;
@@ -96,27 +106,29 @@
         box-sizing: border-box;
     }
 
-    li.current {
+    li.page-a, li.page-b {
         display: block;
+
+        &:after {
+            content: ' ';
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+        }
+    }
+
+    li.page-a {
         left: 0;
         z-index: 1;
     }
 
-    li.current + li {
-        display: block;
+    li.page-b {
         left: 50%;
         z-index: 2;
-    }
-
-    li.current:after, li.current + li:after {
-        content: ' ';
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1000;
     }
 
     @media #{$media-desktop-or-greater} {

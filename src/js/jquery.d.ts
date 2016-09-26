@@ -1,4 +1,4 @@
-interface IJQueryNodes {
+interface IJQueryNodes extends Array<Node> {
 
     hasClass(className: string): boolean;
 
@@ -30,9 +30,11 @@ interface IJQueryNodes {
 
     attr(prop: string): string;
 
-    on(eventName: string, selector: string, func: { (ev: IJQueryEvent) });
+    on(eventName: string, selector: string, func: { (ev: IJQueryEvent, arg?: any) });
 
     bind(eventName: string, func: { (ev: IJQueryEvent) });
+
+    trigger(eventName: string, args: any);
 
     [index: number]: HTMLElement;
 

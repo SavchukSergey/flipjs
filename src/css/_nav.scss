@@ -1,6 +1,7 @@
 @import '_variables.scss';
 
 .page-turn {
+
     a.nav {
         position: absolute;
         display: block;
@@ -13,8 +14,13 @@
         overflow: hidden;
         text-decoration: none;
 
-        transition: opacity 500ms ease-in-out;
+        //transition: opacity 500ms ease-in-out;
         opacity: 0;
+
+        &.nav-next-2, &.nav-prev-2 {
+            display: none;
+        }
+
 
         &:after {
             position: absolute;
@@ -55,14 +61,29 @@
             font-size: 2em;
         }
 
-        a.nav-next-2, a.nav-prev-2 {
-            display: none;
+        a.nav-next, a.nav-prev {
+            display: block;
         }
+
     }
 
     @media #{$media-desktop-or-greater} {
         a.nav-next, a.nav-prev {
             display: none;
         }
+
+        &.can-next-2 {
+            a.nav-next-2 {
+                display: block;
+            }
+        }
+
+        &.can-prev-2 {
+            a.nav-prev-2 {
+                display: block;
+            }
+        }
+
+
     }
 }

@@ -6,7 +6,7 @@
 
 $.fn.pageTurn = function () {
 
-    function init($container): IFlipperControl {
+    function init($container: IJQueryNodes): IFlipperControl {
         var $scaler = $container.find('.scaler');
 
         /** Front side of page being folded */
@@ -133,26 +133,23 @@ $.fn.pageTurn = function () {
             pageHeight = screenHeight;
             pageWidth = screenWidth / 2;
 
-            var $current = $container.find('li.current');
+            var $pageA = $container.find('li.page-a');
+            var $pageB = $container.find('li.page-b');
             switch (corner) {
                 case 'tr':
                 case 'br':
-                    $container.addClass('active').addClass('active-next').removeClass('active-prev');
-                    if ($container.find('li.current').next('li')) {
+                    if ($pageB.next('li:not(.empty)').length) {
                         cleanPages();
-                        $current.addClass('page1').next('li').addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
+                        $pageA.addClass('page1');
+                        $pageB.addClass('page2').next('li').addClass('page3').next('li').addClass('page4');
                     }
                     break;
                 case 'tl':
                 case 'bl':
-                    $container.addClass('active').removeClass('active-next').addClass('active-prev');
-                    if ($container.find('li.current').prev('li').length) {
+                    if ($pageA.prev('li:not(.empty)').length) {
                         cleanPages();
-                        $current.next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
+                        $pageA.next('li').addClass('page4').prev('li').addClass('page3').prev('li').addClass('page2').prev('li').addClass('page1');
                     }
-                    break;
-                default:
-                    $container.removeClass('active').removeClass('active-next').removeClass('active-prev');
                     break;
             }
 
@@ -170,6 +167,9 @@ $.fn.pageTurn = function () {
 
             localToTextureMatrix = getLocalToTextureMatrix(corner);
             textureToLocalMatrix = localToTextureMatrix.reverse();
+
+            $container.toggleClass('active', !!touchDelta).toggleClass('active-next', touchDelta > 0).toggleClass('active-prev', touchDelta < 0);
+
         }
 
         /**
@@ -566,62 +566,38 @@ $.fn.pageTurn = function () {
         }
 
         function refreshState() {
-            var $current = $container.find('li.current');
-            var $prev = $current.prev('li');
-            var $next = $current.next('li');
+            var $pageA = $container.find('li.page-a');
+            var $pageB = $container.find('li.page-b');
+            var $prev = $pageA.prev('li');
+            var $next = $pageB.next('li');
             $container.toggleClass('can-prev-2', !!$prev.length && !$prev.hasClass('empty'));
             $container.toggleClass('can-next-2', !!$next.length && !$next.hasClass('empty'));
 
-            var twoSides = !$current.hasClass('empty') && !!$next.length && !$next.hasClass('empty');
+            var twoSides = !$pageA.hasClass('empty') && !!$next.length && !$next.hasClass('empty');
             $container.toggleClass('two-sides', twoSides)
+
+            preloadImages();
+        }
+
+        function getPageNumber(): number {
+            var $pages = $container.find('li:not(.empty)');
+            var oneSideLeft = $container.hasClass('one-side-left');
+            var i = 1;
+            for (var page of $pages) {
+                var $page = $(page);
+                if ($page.hasClass('page-a')) {
+                    return i + (oneSideLeft ? 0 : 1);
+                } else if ($page.hasClass('page-b')) {
+                    return i;
+                }
+                i++;
+            }
+            return 1;
         }
 
         function shiftCurrent(delta: number) {
-            var $current = $container.find('li.current');
-            var $currentOne = $container.find('li.current-one');
-
-            var $node = $current;
-            var $nodeOne = $currentOne;
-            while (delta >= 2) {
-                $node = $node.next('li').next('li');;
-                $nodeOne = $nodeOne.next('li').next('li');;
-                delta -= 2;
-            }
-            while (delta <= -2) {
-                $node = $node.prev('li').prev('li');;
-                $nodeOne = $nodeOne.prev('li').prev('li');;
-                delta += 2;
-            }
-            while (delta >= 1) {
-                if ($node[0] === $nodeOne[0]) {
-                    $nodeOne = $nodeOne.next('li');
-                } else {
-                    $node = $node.next('li').next('li');
-                    $nodeOne = $nodeOne.next('li');
-                }
-                delta--;
-            }
-            while (delta <= -1) {
-                if ($node[0] === $nodeOne[0]) {
-                    $node = $node.prev('li').prev('li');
-                    $nodeOne = $nodeOne.prev('li');
-                } else {
-                    $nodeOne = $nodeOne.prev('li');
-                }
-                delta++;
-            }
-            if ($node.length) {
-                $current.removeClass('current');
-                $currentOne.removeClass('current-one');
-                $node.addClass('current');
-                $nodeOne.addClass('current-one');
-            }
-
-            refreshState();
-
-            preloadImages();
-
-            return $node;
+            var pn = getPageNumber();
+            navigate(pn + delta);
         }
 
         function animate(callback: { (stage: number) }) {
@@ -692,7 +668,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadNextImages() {
-            var $current = $scaler.find('li.current');
+            var $current = $scaler.find('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.next('li');
                 var $img = $current.find('img');
@@ -701,7 +677,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadPrevImages() {
-            var $current = $scaler.find('li.current');
+            var $current = $scaler.find('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.prev('li');
                 var $img = $current.find('img');
@@ -710,14 +686,14 @@ $.fn.pageTurn = function () {
         }
 
         function animateFlipForward() {
-            var $newBase = $container.find('li.current').next('li');
+            var $newBase = $container.find('li.page-b').next('li');
             if ($newBase.length) {
                 animateArrow('br');
             }
         }
 
         function animateFlipBackward() {
-            var $newBase = $container.find('li.current').prev('li');
+            var $newBase = $container.find('li.page-a').prev('li');
             if ($newBase.length) {
                 animateArrow('bl');
             }
@@ -726,19 +702,21 @@ $.fn.pageTurn = function () {
         function navigate(pageNumber: number) {
             var $pages = $container.find('li:not(.empty)');
             pageNumber = Math.min(Math.max(1, pageNumber), $pages.length + 1);
-            for (var i = 0; i < $pages.length; i += 2) {
+            for (var i = 0; i < $pages.length; i++) {
                 var page = i + 1;
-                var $page1 = $($pages[i]);
-                $page1.toggleClass('current', page == pageNumber || (page + 1) == pageNumber);
-                $page1.toggleClass('current-one', page == pageNumber);
-                if (i + 1 < $pages.length) {
-                    var $page2 = $($pages[i + 1]);
-                    $page2.toggleClass('current-one', (page + 1) == pageNumber);
-                }
+                var $page = $($pages[i]);
+                var pageA = (page % 2 == 0) && (page == pageNumber || (page + 1) == pageNumber);
+                var pageB = (page % 2 == 1) && (page == pageNumber);
+                $page.toggleClass('page-a', pageA);
+                $page.toggleClass('page-b', pageB);
             }
+            var left = pageNumber % 2 == 0;
+            $container.toggleClass('one-side-left', left);
+            $container.toggleClass('one-side-right', !left);
+            refreshState();
+            $container.trigger('page-change', [getPageNumber()]);
         }
 
-        preloadImages();
         refreshState();
 
         return {
