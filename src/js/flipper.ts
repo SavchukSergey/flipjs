@@ -518,7 +518,7 @@ $.fn.pageTurn = function () {
             return textureToLocalMatrix.multiply(pageMatrix);
         }
 
-        function setupFrontPage(localFold: IFold) {
+        function setupBackPage(localFold: IFold) {
             var pageMatrix = getPageMatrix(localFold);
 
             var clipperMatrix: Matrix2D;
@@ -531,13 +531,13 @@ $.fn.pageTurn = function () {
             setupPage($backPage, $backPageImg, pageMatrix, clipperMatrix);
         }
 
-        function setupOtherPage(localFold: IFold) {
+        function setupFrontPage(localFold: IFold) {
             var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
             shift = localToGlobalMatrix.transformVector(shift);
             var pageMatrix = new Matrix2D().translate(shift).multiply(globalToLocalMatrix);
 
-            var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by >1 to avoid zero axis length
-            var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by >1 to avoid zero axis length
+            var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
+            var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by any number >1 to avoid zero axis length
             var clipperMatrix: Matrix2D;
             if (localFold.foldA.x > localFold.foldB.x) { //triangle or trapezoid?
                 clipperMatrix = getTrapezoidClipperMatrix(localFold.foldA, spineA, localFold.foldB, spineB);
@@ -551,8 +551,8 @@ $.fn.pageTurn = function () {
         function refresh(pointA: Vector2D) {
             var localFold = calculateFold();
 
+            setupBackPage(localFold);
             setupFrontPage(localFold);
-            setupOtherPage(localFold);
 
             // dumpFold(localFold);
         }
@@ -723,13 +723,29 @@ $.fn.pageTurn = function () {
             }
         }
 
+        function navigate(pageNumber: number) {
+            var $pages = $container.find('li:not(.empty)');
+            pageNumber = Math.min(Math.max(1, pageNumber), $pages.length + 1);
+            for (var i = 0; i < $pages.length; i += 2) {
+                var page = i + 1;
+                var $page1 = $($pages[i]);
+                $page1.toggleClass('current', page == pageNumber || (page + 1) == pageNumber);
+                $page1.toggleClass('current-one', page == pageNumber);
+                if (i + 1 < $pages.length) {
+                    var $page2 = $($pages[i + 1]);
+                    $page2.toggleClass('current-one', (page + 1) == pageNumber);
+                }
+            }
+        }
+
         preloadImages();
         refreshState();
 
         return {
             animateFlipBackward: animateFlipBackward,
             animateFlipForward: animateFlipForward,
-            shiftCurrent: shiftCurrent
+            shiftCurrent: shiftCurrent,
+            navigate: navigate
         }
     }
 

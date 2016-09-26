@@ -1,3 +1,21 @@
+///<reference path="jquery.d.ts" />
+///<reference path="flipper.d.ts" />
+$(document).ready(function () {
+    var regex = /#magazine:(\d+)/i;
+    function refresh() {
+        var hash = window.location.hash || '#';
+        var res = regex.exec(hash);
+        if (res) {
+            var pageNumber = parseInt(res[1], 10);
+            var pageTurn = $('.page-turn').pageTurn();
+            pageTurn.navigate(pageNumber);
+        }
+    }
+    $(window).bind('hashchange', function () {
+        refresh();
+    });
+    refresh();
+});
 var Matrix2D = (function () {
     function Matrix2D(elements) {
         this.m = elements || [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -590,7 +608,7 @@ $.fn.pageTurn = function () {
             var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointD);
             return textureToLocalMatrix.multiply(pageMatrix);
         }
-        function setupFrontPage(localFold) {
+        function setupBackPage(localFold) {
             var pageMatrix = getPageMatrix(localFold);
             var clipperMatrix;
             if (localFold.foldA.x > localFold.foldB.x) {
@@ -601,12 +619,12 @@ $.fn.pageTurn = function () {
             }
             setupPage($backPage, $backPageImg, pageMatrix, clipperMatrix);
         }
-        function setupOtherPage(localFold) {
+        function setupFrontPage(localFold) {
             var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
             shift = localToGlobalMatrix.transformVector(shift);
             var pageMatrix = new Matrix2D().translate(shift).multiply(globalToLocalMatrix);
-            var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by >1 to avoid zero axis length
-            var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by >1 to avoid zero axis length
+            var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
+            var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by any number >1 to avoid zero axis length
             var clipperMatrix;
             if (localFold.foldA.x > localFold.foldB.x) {
                 clipperMatrix = getTrapezoidClipperMatrix(localFold.foldA, spineA, localFold.foldB, spineB);
@@ -618,8 +636,8 @@ $.fn.pageTurn = function () {
         }
         function refresh(pointA) {
             var localFold = calculateFold();
+            setupBackPage(localFold);
             setupFrontPage(localFold);
-            setupOtherPage(localFold);
             // dumpFold(localFold);
         }
         function cleanPages() {
@@ -771,12 +789,27 @@ $.fn.pageTurn = function () {
                 animateArrow('bl');
             }
         }
+        function navigate(pageNumber) {
+            var $pages = $container.find('li:not(.empty)').removeClass('current-one');
+            pageNumber = Math.min(Math.max(1, pageNumber), $pages.length + 1);
+            for (var i = 0; i < $pages.length; i += 2) {
+                var page = i + 1;
+                var $page1 = $($pages[i]);
+                $page1.toggleClass('current', page == pageNumber || (page + 1) == pageNumber);
+                $page1.toggleClass('current-one', page == pageNumber);
+                if (i + 1 < $pages.length) {
+                    var $page2 = $($pages[i + 1]);
+                    $page2.toggleClass('current-one', (page + 1) == pageNumber);
+                }
+            }
+        }
         preloadImages();
         refreshState();
         return {
             animateFlipBackward: animateFlipBackward,
             animateFlipForward: animateFlipForward,
-            shiftCurrent: shiftCurrent
+            shiftCurrent: shiftCurrent,
+            navigate: navigate
         };
     }
     var data = this.data('page-turn');

@@ -32,6 +32,8 @@ interface IJQueryNodes {
 
     on(eventName: string, selector: string, func: { (ev: IJQueryEvent) });
 
+    bind(eventName: string, func: { (ev: IJQueryEvent) });
+
     [index: number]: HTMLElement;
 
 }
@@ -68,6 +70,8 @@ interface IJQueryStatic {
     (selector: string): IJQueryNodes;
 
     (doc: Document): IJQueryNodes;
+
+    (win: Window): IJQueryNodes;
 
     (node: Node): IJQueryNodes;
 
