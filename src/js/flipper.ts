@@ -573,7 +573,7 @@ $.fn.pageTurn = function () {
             $container.toggleClass('can-prev-2', !!$prev.length && !$prev.hasClass('empty'));
             $container.toggleClass('can-next-2', !!$next.length && !$next.hasClass('empty'));
 
-            var twoSides = !$pageA.hasClass('empty') && !!$next.length && !$next.hasClass('empty');
+            var twoSides = !!$pageA.length && !!$pageB.length && !$pageA.hasClass('empty') && !$pageB.hasClass('empty');
             $container.toggleClass('two-sides', twoSides)
 
             preloadImages();
@@ -609,7 +609,7 @@ $.fn.pageTurn = function () {
 
             animationSemaphore = true;
 
-
+            $container.addClass('animating');
             var frame = 0;
             var step = 4;
 
@@ -625,6 +625,7 @@ $.fn.pageTurn = function () {
                         draw();
                     } else {
                         animationSemaphore = false;
+                        $container.removeClass('animating');
                         promise.resolve();
                     }
                 });

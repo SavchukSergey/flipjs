@@ -1,7 +1,12 @@
 @import '_variables.scss';
 
 .page-turn {
-
+    &.animating {
+        a.nav {
+            display: none !important;
+        }
+    }
+    
     a.nav {
         position: absolute;
         display: block;
@@ -9,7 +14,7 @@
         bottom: 0;
         width: 1.5em;
         z-index: 1000;
-        background-color: rgba(0,0,0,0.5);
+        background-color: rgba(0,0,0,0.75);
         font-size: 3em;
         overflow: hidden;
         text-decoration: none;
