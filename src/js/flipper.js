@@ -773,7 +773,7 @@ $.fn.pageTurn = function () {
                 var page = i + 1;
                 var $page = $($pages[i]);
                 var pageA = (page % 2 == 0) && (page == pageNumber || (page + 1) == pageNumber);
-                var pageB = (page % 2 == 1) && (page == pageNumber);
+                var pageB = (page % 2 == 1) && ((page - 1) == pageNumber || page == pageNumber);
                 $page.toggleClass('page-a', pageA);
                 $page.toggleClass('page-b', pageB);
             }
