@@ -8,6 +8,7 @@ $.fn.pageTurn = function () {
 
     function init($container: IJQueryNodes): IFlipperControl {
         var $scaler = $container.find('.scaler');
+        var $pages = $container.find('.pages');
 
         /** Front side of page being folded */
         var $frontPage: IJQueryNodes;
@@ -32,6 +33,30 @@ $.fn.pageTurn = function () {
         var screenWidth = $scaler.width();
         var pageHeight = screenHeight;
         var pageWidth = screenWidth / 2;
+
+        function buildPreview() {
+            var $preview = $container.find('div.preview');
+            if (!$preview.length) {
+                $preview = $('<div class="preview"><ol></ol></div>');
+                $container.append($preview);
+            }
+            var $ol = $preview.find('ol');
+            $ol.empty();
+            var page = 0;
+            $pages.find('li').each((index, node) => {
+                var $node = $(node);
+                if (!$node.hasClass('empty')) {
+                    page++;
+                }
+                var $originalImg = $node.find('img');
+                var url = $originalImg.attr('data-preview-src') || $originalImg.attr('src');
+                var $img = $('<img />').attr('src', url); 
+                var $li = $('<li></li>');
+                var $a = $('<a></a>').attr('href', `#magazine:${page}`).append($img);
+                $li.append($a);
+                $ol.append($li);
+            });
+        }
 
         /**
          * Get corner type by jquery node
@@ -106,10 +131,10 @@ $.fn.pageTurn = function () {
             switch (corner) {
                 case 'br':
                 case 'tr':
-                    return $container.find('.page3');
+                    return $pages.find('.page3');
                 case 'bl':
                 case 'tl':
-                    return $container.find('.page2');
+                    return $pages.find('.page2');
             }
         }
 
@@ -120,10 +145,10 @@ $.fn.pageTurn = function () {
             switch (corner) {
                 case 'br':
                 case 'tr':
-                    return $container.find('.page2');
+                    return $pages.find('.page2');
                 case 'bl':
                 case 'tl':
-                    return $container.find('.page3');
+                    return $pages.find('.page3');
             }
         }
 
@@ -133,8 +158,8 @@ $.fn.pageTurn = function () {
             pageHeight = screenHeight;
             pageWidth = screenWidth / 2;
 
-            var $pageA = $container.find('li.page-a');
-            var $pageB = $container.find('li.page-b');
+            var $pageA = $pages.find('li.page-a');
+            var $pageB = $pages.find('li.page-b');
             switch (corner) {
                 case 'tr':
                 case 'br':
@@ -275,8 +300,6 @@ $.fn.pageTurn = function () {
 
             function dragEnd(ev: IJQueryEvent) {
                 if (dragging) {
-                    var screenWidth = $scaler.width();
-                    var pageWidth = screenWidth / 2;
                     if (touchPointA.x > pageWidth) {
                         dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
                             shiftCurrent(touchDelta);
@@ -314,7 +337,7 @@ $.fn.pageTurn = function () {
                 return true;
             }
 
-            $('html, body').on('mousedown touchstart', '.page-turn .corner', function (ev) {
+            $('html, body').on('mousedown touchstart', '.page-turn .corner', (ev: IJQueryEvent) => {
                 var $evtarget = $(ev.target);
                 if (state === 'init') {
                     mouseDownStart = getMousePosition(ev);
@@ -323,7 +346,7 @@ $.fn.pageTurn = function () {
                     state = 'threshold';
                     $handle = $evtarget.closest('.corner');
                 }
-            }).on('mousemove touchmove', '.page-turn .corner', function (ev) {
+            }).on('mousemove touchmove', '.page-turn .corner', (ev: IJQueryEvent) => {
                 if (dragging) return;
                 draggingPreview = {};
                 $handle = $(ev.target).closest('.corner');
@@ -331,15 +354,15 @@ $.fn.pageTurn = function () {
                 var corner = getCornerType(args.$handle);
                 initCorner(corner);
                 dragFold(ev);
-            }).on('mouseout touchend', '.page-turn .corner', function (ev) {
+            }).on('mouseout touchend', '.page-turn .corner', (ev: IJQueryEvent) => {
                 if (!draggingPreview) return;
                 draggingPreview = null;
                 dragAnimate(new Vector2D(0, 0));
-            }).bind('mousemove touchmove', function (ev) {
+            }).bind('mousemove touchmove', (ev: IJQueryEvent) => {
                 return dragCheck(ev, true);
             }).bind('mousewheel', function (ev) {
                 return dragCheck(ev, false);
-            }).bind('mouseup touchend', function (ev: IJQueryEvent) {
+            }).bind('mouseup touchend', (ev: IJQueryEvent) => {
                 if (state === 'drag') {
                     ev.preventDefault();
                     ev.stopPropagation();
@@ -348,7 +371,7 @@ $.fn.pageTurn = function () {
                     animateArrow(getCornerType($handle));
                 }
                 state = 'init';
-            }).bind('keydown', function (ev) {
+            }).bind('keydown', (ev: IJQueryEvent) => {
                 if (!dragging) return;
 
                 if (ev.keyCode === 27) {      //escape
@@ -558,16 +581,17 @@ $.fn.pageTurn = function () {
         }
 
         function cleanPages() {
-            return $container.find('li').removeClass('page1 page2 page3 page4')
+            return $pages.find('li').removeClass('page1 page2 page3 page4')
         }
 
         function clean() {
-            $container.removeClass('active').find('li').css('transform', '').find('img').css('transform', '');
+            $container.removeClass('active');
+            $pages.find('li').css('transform', '').find('img').css('transform', '');
         }
 
         function refreshState() {
-            var $pageA = $container.find('li.page-a');
-            var $pageB = $container.find('li.page-b');
+            var $pageA = $pages.find('li.page-a');
+            var $pageB = $pages.find('li.page-b');
             var $prev = $pageA.prev('li');
             var $next = $pageB.next('li');
             $container.toggleClass('can-prev-2', !!$prev.length && !$prev.hasClass('empty'));
@@ -580,19 +604,16 @@ $.fn.pageTurn = function () {
         }
 
         function getPageNumber(): number {
-            var $pages = $container.find('li:not(.empty)');
+            var $items = $pages.find('li:not(.empty)');
             var oneSideLeft = $container.hasClass('one-side-left');
-            var i = 1;
-            for (var page of $pages) {
-                var $page = $(page);
+            for (var n = 0; n < $items.length; n++) {
+                var $page = $($items[n]);
                 if ($page.hasClass('page-a')) {
-                    return i + (oneSideLeft ? 0 : 1);
+                    return n + (oneSideLeft ? 1 : 2);
                 } else if ($page.hasClass('page-b')) {
-                    return i;
+                    return n + 1;
                 }
-                i++;
             }
-            return 1;
         }
 
         function shiftCurrent(delta: number) {
@@ -669,7 +690,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadNextImages() {
-            var $current = $scaler.find('li.page-a');
+            var $current = $pages.find('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.next('li');
                 var $img = $current.find('img');
@@ -678,7 +699,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadPrevImages() {
-            var $current = $scaler.find('li.page-a');
+            var $current = $pages.find('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.prev('li');
                 var $img = $current.find('img');
@@ -687,25 +708,32 @@ $.fn.pageTurn = function () {
         }
 
         function animateFlipForward() {
-            var $newBase = $container.find('li.page-b').next('li');
+            var $newBase = $pages.children('li.page-b').next('li');
             if ($newBase.length) {
                 animateArrow('br');
             }
         }
 
         function animateFlipBackward() {
-            var $newBase = $container.find('li.page-a').prev('li');
+            var $newBase = $pages.children('li.page-a').prev('li');
             if ($newBase.length) {
                 animateArrow('bl');
             }
         }
 
+        function getMaxPage() {
+            return $pages.children('li:not(.empty)').length + 1;
+        }
+
         function navigate(pageNumber: number) {
-            var $pages = $container.find('li:not(.empty)');
-            pageNumber = Math.min(Math.max(1, pageNumber), $pages.length + 1);
-            for (var i = 0; i < $pages.length; i++) {
-                var page = i + 1;
-                var $page = $($pages[i]);
+            var $items = $pages.children('li');
+            pageNumber = Math.min(Math.max(1, pageNumber), getMaxPage());
+            var page = 0;
+            for (var i = 0; i < $items.length; i++) {
+                var $page = $($items[i]);
+                if (!$page.hasClass('empty')) {
+                    page++;
+                }
                 var pageA = (page % 2 == 0) && (page == pageNumber || (page + 1) == pageNumber);
                 var pageB = (page % 2 == 1) && ((page - 1) == pageNumber || page == pageNumber);
                 $page.toggleClass('page-a', pageA);
@@ -718,13 +746,20 @@ $.fn.pageTurn = function () {
             $container.trigger('page-change', [getPageNumber()]);
         }
 
+        function close() {
+            window.location.hash = '#';
+        }
+
         refreshState();
+
+        buildPreview();
 
         return {
             animateFlipBackward: animateFlipBackward,
             animateFlipForward: animateFlipForward,
             shiftCurrent: shiftCurrent,
-            navigate: navigate
+            navigate: navigate,
+            close: close
         }
     }
 
@@ -745,6 +780,8 @@ $(document).ready(function () {
         data.shiftCurrent(1);
     }).on('click', '.page-turn .nav-prev', () => {
         data.shiftCurrent(-1);
+    }).on('click', '.page-turn .bg, .page-turn .empty', () => {
+        data.close();
     });
 });
 

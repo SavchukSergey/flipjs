@@ -14,5 +14,7 @@ interface IFlipperControl {
     shiftCurrent(delta: number);
     
     navigate(page: number);
+
+    close();
     
 }

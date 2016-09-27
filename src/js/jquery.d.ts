@@ -1,4 +1,4 @@
-interface IJQueryNodes extends Array<Node> {
+interface IJQueryNodes {
 
     hasClass(className: string): boolean;
 
@@ -18,11 +18,15 @@ interface IJQueryNodes extends Array<Node> {
 
     ready(f: { () });
 
+    empty() : IJQueryNodes;
+
+    clone() : IJQueryNodes;
+
     length: number;
 
     width(): number;
 
-    height(): number;
+    height(val?: number): number;
 
     css(obj: any): IJQueryNodes;
 
@@ -30,18 +34,75 @@ interface IJQueryNodes extends Array<Node> {
 
     attr(prop: string): string;
 
+    attr(prop: string, value: string): IJQueryNodes;
+
+    val(): string;
+
+    val(value: string): IJQueryNodes;
+
+    text(prop: string): string;
+
+    text(prop: string, value: string): IJQueryNodes;
+
+    data(prop: string): any;
+
+    data(prop: string, value: any): IJQueryNodes;
+
     on(eventName: string, selector: string, func: { (ev: IJQueryEvent, arg?: any) });
 
-    bind(eventName: string, func: { (ev: IJQueryEvent) });
+    off(eventName: string);
 
-    trigger(eventName: string, args: any);
+    bind(eventName: string, func: IJQueryEventHandler);
+
+    unbind(eventName: string, func: IJQueryEventHandler);
+
+    trigger(eventName: string, args?: any);
+
+    show(): IJQueryNodes;
+
+    hide(): IJQueryNodes;
+
+    remove(): IJQueryNodes;
+
+    index(): number;
+
+    blur(): IJQueryNodes;
+
+    append(nodes: IJQueryNodes): IJQueryNodes;
 
     [index: number]: HTMLElement;
+
+    each(func: IJQueryEach<HTMLElement>): IJQueryNodes;
+
+    filter(selector: string): IJQueryNodes;
+
+    after(node: IJQueryNodes): IJQueryNodes;
+
+    not(selector: string): IJQueryNodes;
+
+    children(selector?: string): IJQueryNodes;
+
+    animate(args: any, args2: any): IJQueryNodes;
+
+    contents(): IJQueryNodes;
 
 }
 
 interface IJQueryEvent {
-    
+
+    target: Node;
+
+    pageX: number;
+
+    pageY: number;
+
+    which: number;
+
+    keyCode: number;
+
+
+    ctrlKey: boolean;
+
     type: string;
 
     clientX: number;
@@ -49,22 +110,20 @@ interface IJQueryEvent {
     clientY: number;
 
     originalEvent: Event;
-    
-    target: Node;
 
     preventDefault();
-    
+
     stopPropagation();
 
 }
 
 interface IJQueryPromise {
-    
-    reject(data?: any) : IJQueryPromise;
 
-    resolve(data?: any) : IJQueryPromise;
+    reject(data?: any): IJQueryPromise;
 
-    done(data: {(data?: any)}) : IJQueryPromise;
+    resolve(data?: any): IJQueryPromise;
+
+    done(data: { (data?: any) }): IJQueryPromise;
 }
 
 interface IJQueryStatic {
@@ -77,12 +136,33 @@ interface IJQueryStatic {
 
     (node: Node): IJQueryNodes;
 
+    (obj: any): IJQueryNodes;
+
     Deferred(): IJQueryPromise;
 
     fn: any;
 
+    extend(obj: any, ...others): any;
+
+    ajax(args: any): IJQueryPromise;
+
+    each<T>(objs: T[], func: IJQueryEach<T>): IJQueryNodes;
+
+    parseJSON(str: string): any;
+
 }
 
+interface IJQueryEventHandler {
+
+    (ev: IJQueryEvent, args?: any);
+
+}
+
+interface IJQueryEach<T> {
+
+    (index: number, node: T);
+
+}
 
 declare var $: IJQueryStatic;
 
