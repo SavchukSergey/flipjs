@@ -590,8 +590,8 @@ $.fn.pageTurn = function () {
         }
 
         function refreshState() {
-            var $pageA = $pages.find('li.page-a');
-            var $pageB = $pages.find('li.page-b');
+            var $pageA = $pages.children('li.page-a');
+            var $pageB = $pages.children('li.page-b');
             var $prev = $pageA.prev('li');
             var $next = $pageB.next('li');
             $container.toggleClass('can-prev-2', !!$prev.length && !$prev.hasClass('empty'));
@@ -722,7 +722,7 @@ $.fn.pageTurn = function () {
         }
 
         function getMaxPage() {
-            return $pages.children('li:not(.empty)').length + 1;
+            return $pages.children('li:not(.empty)').length;
         }
 
         function navigate(pageNumber: number) {

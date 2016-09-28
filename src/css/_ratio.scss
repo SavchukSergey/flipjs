@@ -1,0 +1,44 @@
+@import '_variables.scss';
+
+@mixin ratio($page-width, $page-height) {
+    $one-page-ratio: $page-width / $page-height;
+    $one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
+    $two-page-ratio: 2 * $page-width / $page-height;
+    $two-page-ratio-string: (round($two-page-ratio * 1000)) #{'/'} 1000;
+
+    @media #{$media-desktop-or-greater} {
+        @media (max-aspect-ratio: $two-page-ratio-string) { 
+            width: $fill * 100vw;
+            height: $fill * 100vw / $two-page-ratio;
+        }
+
+        @media (min-aspect-ratio: $two-page-ratio-string) { 
+            width: $fill * 100vh * $two-page-ratio;
+            height: $fill * 100vh;
+        }
+    } 
+
+
+    @media #{$media-tablet-or-smaller} { 
+        @media (max-aspect-ratio: $one-page-ratio-string) {
+            width: $fill * 100vw;
+            height: $fill * 100vw / $one-page-ratio;
+        }
+
+        @media (min-aspect-ratio: $one-page-ratio-string) { 
+            width: $fill * 100vh * $one-page-ratio;
+            height: $fill * 100vh;
+        }
+    }
+
+}
+
+.page-turn {
+    &.a4 {
+        @include ratio(210mm, 297mm);
+    }
+    &.letter {
+        @include ratio(8.5in, 11in);
+    }
+
+}
