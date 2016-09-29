@@ -4,13 +4,21 @@
 ///<reference path="jquery.d.ts" />
 ///<reference path="flipper.d.ts" />
 ///<reference path="draggable.ts" />
+///<reference path="draggable-zoom.ts" />
+///<reference path="draggable-fold.ts" />
+///<reference path="corner.ts" />
 
 $.fn.pageTurn = function () {
+
+    var DraggableZoom = FlipJs.DraggableZoom;
+    var DraggableFold = FlipJs.DraggableFold;
 
     function init($container: IJQueryNodes): IFlipperControl {
         var $scaler = $container.find('.scaler');
         var $pages = $container.find('.pages');
         var $zoomNode = $container.find('.page-turn-magnifier');
+        
+        var corner: FlipJs.Corner;
 
         /** Front side of page being folded */
         var $frontPage: IJQueryNodes;
@@ -20,7 +28,6 @@ $.fn.pageTurn = function () {
         var $backPage: IJQueryNodes;
         var $backPageImg: IJQueryNodes;
 
-        var touchPointA: Vector2D;
         var touchCorner = '';
         var touchDelta = 0;
 
@@ -29,8 +36,6 @@ $.fn.pageTurn = function () {
 
         var animationSemaphore = false;
 
-        var globalToLocalMatrix: Matrix2D;
-        var localToGlobalMatrix: Matrix2D;
         var localToTextureMatrix: Matrix2D;
         var textureToLocalMatrix: Matrix2D;
 
@@ -78,25 +83,6 @@ $.fn.pageTurn = function () {
             } else {
                 return '';
             }
-        }
-
-        /**
-         * Get global to corner local coordinate system transformation matrix
-         */
-        function getCornerMatrix(corner: string): Matrix2D {
-            var m = new Matrix2D();
-            switch (corner) {
-                case 'br':
-                    return m.translate(new Vector2D(-screenWidth, -screenHeight)).scale(-1, -1);
-                case 'bl':
-                    return m.translate(new Vector2D(0, -screenHeight)).scale(1, -1);
-                case 'tr':
-                    return m.translate(new Vector2D(-screenWidth, 0)).scale(-1, 1);
-                case 'tl':
-                    return m.translate(new Vector2D(0, 0)).scale(1, 1);
-            }
-
-            return null;
         }
 
         function getCornerShift(corner: string): number {
@@ -157,7 +143,8 @@ $.fn.pageTurn = function () {
             }
         }
 
-        function initCorner(corner: string) {
+        function initCorner(cornerType: string) {
+            corner = new FlipJs.Corner($container, cornerType);
             screenHeight = $scaler.height();
             screenWidth = $scaler.width();
             pageHeight = screenHeight;
@@ -165,7 +152,7 @@ $.fn.pageTurn = function () {
 
             var $pageA = $pages.find('li.page-a');
             var $pageB = $pages.find('li.page-b');
-            switch (corner) {
+            switch (cornerType) {
                 case 'tr':
                 case 'br':
                     if ($pageB.next('li:not(.empty)').length) {
@@ -183,48 +170,22 @@ $.fn.pageTurn = function () {
                     break;
             }
 
-            $frontPage = getFrontPage(corner);
-            $backPage = getBackPage(corner);
+            $frontPage = getFrontPage(cornerType);
+            $backPage = getBackPage(cornerType);
 
             $frontPageImg = $frontPage.find('img');
             $backPageImg = $backPage.find('img');
 
-            touchCorner = corner;
-            touchDelta = getCornerShift(corner);
+            touchCorner = cornerType;
+            touchDelta = getCornerShift(cornerType);
 
-            globalToLocalMatrix = getCornerMatrix(corner);
-            localToGlobalMatrix = globalToLocalMatrix.reverse();
-
-            localToTextureMatrix = getLocalToTextureMatrix(corner);
+            localToTextureMatrix = getLocalToTextureMatrix(cornerType);
             textureToLocalMatrix = localToTextureMatrix.reverse();
 
             $container.toggleClass('active', !!touchDelta).toggleClass('active-next', touchDelta > 0).toggleClass('active-prev', touchDelta < 0);
 
         }
 
-        /**
-         * Check pointA to spine distance. We dont want page to be torn...
-         */
-        function fixPointA(pointA: Vector2D): Vector2D {
-            if (pointA.length() < 10) pointA = new Vector2D(0, 0);
-
-            var spinePointB = new Vector2D(pageWidth, pageHeight);
-            var maxDiag = spinePointB.length();
-            var diag = pointA.sub(spinePointB);
-            if (diag.length() > maxDiag) {
-                diag = diag.changeLength(maxDiag);
-                pointA = diag.add(spinePointB);
-            }
-
-            var spinePointA = new Vector2D(pageWidth, 0);
-            var dir = pointA.sub(spinePointA);
-            if (dir.length() > pageWidth) {
-                dir = dir.changeLength(pageWidth);
-                pointA = dir.add(spinePointA);
-            }
-
-            return pointA;
-        }
 
         /**
          * Easing function
@@ -308,17 +269,17 @@ $.fn.pageTurn = function () {
             }
 
             function dragMoveFold(args: IDragArgs) {
-                touchPointA = globalToLocalMatrix.transformVector(args.rel);
-                refresh(touchPointA);
+                corner.setGlobalPointA(args.rel);
+                refresh();
             }
 
             function dragAnimate(target: Vector2D) {
-                var start = touchPointA;
+                var start = corner.getPoint();
                 var delta = target.sub(start);
                 return animate((stage: number) => {
                     var vector = delta.mul(stage).add(start);
-                    touchPointA = vector;
-                    refresh(vector);
+                    corner.setLocalPointA(vector);
+                    refresh();
                 }).done(() => {
                     cleanPages();
                     clean();
@@ -342,6 +303,7 @@ $.fn.pageTurn = function () {
             }
 
             function dragEndFold(ev: IJQueryEvent) {
+                var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
                     dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
                         shiftCurrent(touchDelta);
@@ -507,8 +469,7 @@ $.fn.pageTurn = function () {
         }
 
         function calculateFold(): IFold {
-            var pointA = touchPointA;// getPointAFromStage(stage);
-            pointA = fixPointA(pointA);
+            var pointA = corner.getPoint();
             var fold = calculateFoldByCorner(pointA);
 
             return {
@@ -524,7 +485,7 @@ $.fn.pageTurn = function () {
 
         function dumpFold(localFold: IFold) {
             function debugPoint($point: IJQueryNodes, vector: Vector2D) {
-                vector = localToGlobalMatrix.transformVector(vector);
+                vector = corner.localToGlobal(vector);
                 $point.css({
                     left: (100 * vector.x / screenWidth) + '%',
                     top: (100 * vector.y / screenHeight) + '%'
@@ -573,8 +534,8 @@ $.fn.pageTurn = function () {
          * @param clipperMatrix Clipper matrix in corner local coordinate system
          */
         function setupPage($page: IJQueryNodes, $img: IJQueryNodes, pageMatrix: Matrix2D, clipperMatrix: Matrix2D) {
-            pageMatrix = pageMatrix.multiply(localToGlobalMatrix);
-            clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
+            pageMatrix = pageMatrix.multiply(corner.localToGlobalMatrix);
+            clipperMatrix = clipperMatrix.multiply(corner.localToGlobalMatrix);
 
             $page.css('transform', clipperMatrix.getTransformExpression());
 
@@ -606,8 +567,8 @@ $.fn.pageTurn = function () {
 
         function setupFrontPage(localFold: IFold) {
             var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
-            shift = localToGlobalMatrix.transformVector(shift);
-            var pageMatrix = new Matrix2D().translate(shift).multiply(globalToLocalMatrix);
+            shift = corner.localToGlobalMatrix.transformVector(shift);
+            var pageMatrix = new Matrix2D().translate(shift).multiply(corner.globalToLocalMatrix);
 
             var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
             var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by any number >1 to avoid zero axis length
@@ -621,7 +582,7 @@ $.fn.pageTurn = function () {
             setupPage($frontPage, $frontPageImg, pageMatrix, clipperMatrix);
         }
 
-        function refresh(pointA: Vector2D) {
+        function refresh() {
             var localFold = calculateFold();
 
             setupBackPage(localFold);
@@ -707,12 +668,12 @@ $.fn.pageTurn = function () {
             return promise;
         }
 
-        function animateArrow(corner: string) {
-            initCorner(corner);
+        function animateArrow(cornerType: string) {
+            initCorner(cornerType);
             animate(stage => {
                 var pointA = getPointAFromStage(stage);
-                touchPointA = pointA;
-                refresh(touchPointA);
+                corner.setLocalPointA(pointA);
+                refresh();
             }).done(() => {
                 cleanPages();
                 clean();

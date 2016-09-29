@@ -2,7 +2,7 @@
 ///<reference path="jquery.d.ts" />
 
 interface IDragArgs {
-    
+
     $handle: IJQueryNodes;
 
     vector: Vector2D;
@@ -11,4 +11,16 @@ interface IDragArgs {
 
     event: IJQueryEvent;
 
+}
+
+interface IDraggable {
+
+    start(args: IDragArgs);
+
+    move(args: IDragArgs);
+
+    stop(args: IDragArgs);
+
+    cancel(args: IDragArgs);
+    
 }
