@@ -145,6 +145,7 @@ var FlipJs;
             this.localToGlobalMatrix = this.globalToLocalMatrix.reverse();
             this.spinePointA = new Vector2D(pageWidth, 0);
             this.spinePointB = new Vector2D(pageWidth, pageHeight);
+            this.pagesDelta = this.getCornerShift(cornerType);
         }
         Corner.prototype.setLocalPointA = function (point) {
             point = this.fixPointA(point);
@@ -247,6 +248,17 @@ var FlipJs;
             }
             return null;
         };
+        Corner.prototype.getCornerShift = function (corner) {
+            switch (corner) {
+                case 'br':
+                case 'tr':
+                    return 2;
+                case 'bl':
+                case 'tl':
+                    return -2;
+            }
+            return 0;
+        };
         return Corner;
     }());
     FlipJs.Corner = Corner;
@@ -341,8 +353,7 @@ $.fn.pageTurn = function () {
         var $backPage;
         var $backPageImg;
         var touchCorner = '';
-        var touchDelta = 0;
-        var zoomK = 1.5;
+        var zoomK = 2;
         var zoomShift = new Vector2D(0, 0);
         var animationSemaphore = false;
         var localToTextureMatrix;
@@ -393,17 +404,6 @@ $.fn.pageTurn = function () {
             else {
                 return '';
             }
-        }
-        function getCornerShift(corner) {
-            switch (corner) {
-                case 'br':
-                case 'tr':
-                    return 2;
-                case 'bl':
-                case 'tl':
-                    return -2;
-            }
-            return 0;
         }
         /**
          * Get local to texture transform matrix
@@ -477,13 +477,14 @@ $.fn.pageTurn = function () {
             $frontPageImg = $frontPage.find('img');
             $backPageImg = $backPage.find('img');
             touchCorner = cornerType;
-            touchDelta = getCornerShift(cornerType);
+            var touchDelta = corner.pagesDelta;
             localToTextureMatrix = getLocalToTextureMatrix(cornerType);
             textureToLocalMatrix = localToTextureMatrix.reverse();
             $container.toggleClass('active', !!touchDelta).toggleClass('active-next', touchDelta > 0).toggleClass('active-prev', touchDelta < 0);
         }
         /**
          * Easing function
+         * @param t Time from 0 to 1
          */
         function easeInOutCubic(t, b, c, d) {
             t /= d / 2;
@@ -588,7 +589,7 @@ $.fn.pageTurn = function () {
                 var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
                     dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
-                        shiftCurrent(touchDelta);
+                        shiftCurrent(corner.pagesDelta);
                     });
                 }
                 else {
@@ -859,7 +860,7 @@ $.fn.pageTurn = function () {
             }).done(function () {
                 cleanPages();
                 clean();
-                shiftCurrent(touchDelta);
+                shiftCurrent(corner.pagesDelta);
             });
         }
         function preloadImages() {

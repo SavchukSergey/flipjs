@@ -29,9 +29,8 @@ $.fn.pageTurn = function () {
         var $backPageImg: IJQueryNodes;
 
         var touchCorner = '';
-        var touchDelta = 0;
 
-        var zoomK = 1.5;
+        var zoomK = 2;
         var zoomShift = new Vector2D(0, 0);
 
         var animationSemaphore = false;
@@ -83,19 +82,6 @@ $.fn.pageTurn = function () {
             } else {
                 return '';
             }
-        }
-
-        function getCornerShift(corner: string): number {
-            switch (corner) {
-                case 'br':
-                case 'tr':
-                    return 2;
-                case 'bl':
-                case 'tl':
-                    return -2;
-            }
-
-            return 0;
         }
 
         /**
@@ -177,7 +163,7 @@ $.fn.pageTurn = function () {
             $backPageImg = $backPage.find('img');
 
             touchCorner = cornerType;
-            touchDelta = getCornerShift(cornerType);
+            var touchDelta = corner.pagesDelta;
 
             localToTextureMatrix = getLocalToTextureMatrix(cornerType);
             textureToLocalMatrix = localToTextureMatrix.reverse();
@@ -189,6 +175,7 @@ $.fn.pageTurn = function () {
 
         /**
          * Easing function
+         * @param t Time from 0 to 1
          */
         function easeInOutCubic(t: number, b: number, c: number, d: number): number {
             t /= d / 2;
@@ -306,7 +293,7 @@ $.fn.pageTurn = function () {
                 var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
                     dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
-                        shiftCurrent(touchDelta);
+                        shiftCurrent(corner.pagesDelta);
                     });
                 } else {
                     dragCancel(ev);
@@ -613,7 +600,7 @@ $.fn.pageTurn = function () {
             }).done(() => {
                 cleanPages();
                 clean();
-                shiftCurrent(touchDelta);
+                shiftCurrent(corner.pagesDelta);
             });
         }
 

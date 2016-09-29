@@ -14,6 +14,8 @@ namespace FlipJs {
         private pageHeight: number;
         private pageWidth: number;
 
+        public pagesDelta: number;
+
         public globalToLocalMatrix: Matrix2D;
         public localToGlobalMatrix: Matrix2D;
 
@@ -36,6 +38,8 @@ namespace FlipJs {
 
             this.spinePointA = new Vector2D(pageWidth, 0);
             this.spinePointB = new Vector2D(pageWidth, pageHeight);
+
+            this.pagesDelta = this.getCornerShift(cornerType);
 
         }
 
@@ -161,7 +165,18 @@ namespace FlipJs {
             return null;
         }
 
+        private getCornerShift(corner: string): number {
+            switch (corner) {
+                case 'br':
+                case 'tr':
+                    return 2;
+                case 'bl':
+                case 'tl':
+                    return -2;
+            }
 
+            return 0;
+        }
 
     }
 
