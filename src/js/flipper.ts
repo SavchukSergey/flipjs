@@ -17,6 +17,7 @@ $.fn.pageTurn = function () {
         var $scaler = $container.find('.scaler');
         var $pages = $container.find('.pages');
         var $zoomNode = $container.find('.page-turn-magnifier');
+        var $toolbarPage = $container.find('.page-turn-toolbar input');
         
         var corner: FlipJs.Corner;
 
@@ -34,9 +35,6 @@ $.fn.pageTurn = function () {
         var zoomShift = new Vector2D(0, 0);
 
         var animationSemaphore = false;
-
-        var localToTextureMatrix: Matrix2D;
-        var textureToLocalMatrix: Matrix2D;
 
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
@@ -81,23 +79,6 @@ $.fn.pageTurn = function () {
                 return 'tl';
             } else {
                 return '';
-            }
-        }
-
-        /**
-         * Get local to texture transform matrix
-         */
-        function getLocalToTextureMatrix(corner: string): Matrix2D {
-            var m = new Matrix2D();
-            switch (corner) {
-                case 'br':
-                    return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
-                case 'tr':
-                    return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
-                case 'bl':
-                    return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
-                case 'tl':
-                    return m.scale(1, 1).translate(new Vector2D(0, 0));
             }
         }
 
@@ -164,9 +145,6 @@ $.fn.pageTurn = function () {
 
             touchCorner = cornerType;
             var touchDelta = corner.pagesDelta;
-
-            localToTextureMatrix = getLocalToTextureMatrix(cornerType);
-            textureToLocalMatrix = localToTextureMatrix.reverse();
 
             $container.toggleClass('active', !!touchDelta).toggleClass('active-next', touchDelta > 0).toggleClass('active-prev', touchDelta < 0);
 
@@ -348,7 +326,7 @@ $.fn.pageTurn = function () {
                 if (!draggingPreview) return;
                 draggingPreview = null;
                 dragAnimate(new Vector2D(0, 0));
-            }).on('mousedown touchstart', '.page-turn.zoom-in', (ev: IJQueryEvent) => {
+            }).on('mousedown touchstart', '.page-turn.zoom-in .page-turn-magnifier', (ev: IJQueryEvent) => {
                 var $evtarget = $(ev.target);
                 if (state === 'init') {
                     mouseDownStart = getMousePosition(ev);
@@ -472,7 +450,7 @@ $.fn.pageTurn = function () {
             var pageYAxis = fold.pointC.sub(fold.pointD).normalize();
             var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointD);
 
-            return textureToLocalMatrix.multiply(pageMatrix);
+            return corner.textureToLocalMatrix.multiply(pageMatrix);
         }
 
         function setupBackPage(localFold: IFold) {
@@ -489,8 +467,7 @@ $.fn.pageTurn = function () {
         }
 
         function setupFrontPage(localFold: IFold) {
-            var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
-            shift = corner.localToGlobalMatrix.transformVector(shift);
+            var shift = corner.textureToGlobal(new Vector2D(0, 0));
             var pageMatrix = new Matrix2D().translate(shift).multiply(corner.globalToLocalMatrix);
 
             var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
@@ -534,6 +511,8 @@ $.fn.pageTurn = function () {
             var twoSides = !!$pageA.length && !!$pageB.length && !$pageA.hasClass('empty') && !$pageB.hasClass('empty');
             $container.toggleClass('two-sides', twoSides)
 
+            var pageNum = getPageNumber();
+            $toolbarPage.val(pageNum.toString());
             preloadImages();
         }
 
@@ -624,7 +603,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadNextImages() {
-            var $current = $pages.find('li.page-a');
+            var $current = $pages.children('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.next('li');
                 var $img = $current.find('img');
@@ -633,7 +612,7 @@ $.fn.pageTurn = function () {
         }
 
         function preloadPrevImages() {
-            var $current = $pages.find('li.page-a');
+            var $current = $pages.children('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.prev('li');
                 var $img = $current.find('img');
@@ -644,14 +623,22 @@ $.fn.pageTurn = function () {
         function animateFlipForward() {
             var $newBase = $pages.children('li.page-b').next('li');
             if ($newBase.length) {
-                animateArrow('br');
+                if (!zoom()) {
+                    animateArrow('br');
+                } else {
+                    shiftCurrent(2);
+                }
             }
         }
 
         function animateFlipBackward() {
             var $newBase = $pages.children('li.page-a').prev('li');
             if ($newBase.length) {
-                animateArrow('bl');
+                if (!zoom()) {
+                    animateArrow('bl');
+                } else {
+                    shiftCurrent(-2);
+                }
             }
         }
 
@@ -734,16 +721,19 @@ $.fn.pageTurn = function () {
 
 $(document).ready(function () {
     var data = $('.page-turn').pageTurn();
-    $('body').on('dblclick', '.page-turn', () => {
+    $('body').on('dblclick', '.page-turn .page-turn-magnifier', () => {
         data.toggleZoom();
-    }).on('click', '.page-turn .nav-next-2', () => {
+    }).on('click', '.page-turn .go-next-2', () => {
         data.animateFlipForward();
-    }).on('click', '.page-turn .nav-prev-2', () => {
+    }).on('click', '.page-turn .go-prev-2', () => {
         data.animateFlipBackward();
-    }).on('click', '.page-turn .nav-next', () => {
+    }).on('click', '.page-turn .go-next', () => {
         data.shiftCurrent(1);
-    }).on('click', '.page-turn .nav-prev', () => {
+    }).on('click', '.page-turn .go-prev', () => {
         data.shiftCurrent(-1);
+    }).on('change', '.page-turn .go-page', (ev) => {
+        var $input = $(ev.target).closest('input');
+        data.navigate(parseInt($input.val(), 10));
     }).on('click', '.page-turn .bg, .page-turn .empty', () => {
         data.close();
     });

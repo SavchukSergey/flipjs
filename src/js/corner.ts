@@ -19,6 +19,10 @@ namespace FlipJs {
         public globalToLocalMatrix: Matrix2D;
         public localToGlobalMatrix: Matrix2D;
 
+        public localToTextureMatrix: Matrix2D;
+        public textureToLocalMatrix: Matrix2D;
+
+
         private spinePointA: Vector2D;
         private spinePointB: Vector2D;
 
@@ -35,6 +39,10 @@ namespace FlipJs {
 
             this.globalToLocalMatrix = this.getCornerMatrix(cornerType);
             this.localToGlobalMatrix = this.globalToLocalMatrix.reverse();
+
+            this.localToTextureMatrix = this.getLocalToTextureMatrix(cornerType);
+            this.textureToLocalMatrix = this.localToTextureMatrix.reverse();
+
 
             this.spinePointA = new Vector2D(pageWidth, 0);
             this.spinePointB = new Vector2D(pageWidth, pageHeight);
@@ -59,6 +67,17 @@ namespace FlipJs {
 
         public localToGlobal(vector: Vector2D) {
             return this.localToGlobalMatrix.transformVector(vector);
+        }
+
+        public textureToLocal(vector: Vector2D) {
+            vector = this.textureToLocalMatrix.transformVector(vector);
+            return vector;
+        }
+
+        public textureToGlobal(vector: Vector2D) {
+            vector = this.textureToLocalMatrix.transformVector(vector);
+            vector = this.localToGlobalMatrix.transformVector(vector);
+            return vector;
         }
 
         public calculateFold(): IFold {
@@ -164,6 +183,27 @@ namespace FlipJs {
 
             return null;
         }
+
+        /**
+         * Get local to texture transform matrix
+         */
+        private getLocalToTextureMatrix(corner: string): Matrix2D {
+            var pageWidth = this.pageWidth;
+            var pageHeight = this.pageHeight;
+
+            var m = new Matrix2D();
+            switch (corner) {
+                case 'br':
+                    return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
+                case 'tr':
+                    return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
+                case 'bl':
+                    return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
+                case 'tl':
+                    return m.scale(1, 1).translate(new Vector2D(0, 0));
+            }
+        }
+
 
         private getCornerShift(corner: string): number {
             switch (corner) {

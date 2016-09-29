@@ -143,6 +143,8 @@ var FlipJs;
             this.pageWidth = pageWidth;
             this.globalToLocalMatrix = this.getCornerMatrix(cornerType);
             this.localToGlobalMatrix = this.globalToLocalMatrix.reverse();
+            this.localToTextureMatrix = this.getLocalToTextureMatrix(cornerType);
+            this.textureToLocalMatrix = this.localToTextureMatrix.reverse();
             this.spinePointA = new Vector2D(pageWidth, 0);
             this.spinePointB = new Vector2D(pageWidth, pageHeight);
             this.pagesDelta = this.getCornerShift(cornerType);
@@ -159,6 +161,15 @@ var FlipJs;
         };
         Corner.prototype.localToGlobal = function (vector) {
             return this.localToGlobalMatrix.transformVector(vector);
+        };
+        Corner.prototype.textureToLocal = function (vector) {
+            vector = this.textureToLocalMatrix.transformVector(vector);
+            return vector;
+        };
+        Corner.prototype.textureToGlobal = function (vector) {
+            vector = this.textureToLocalMatrix.transformVector(vector);
+            vector = this.localToGlobalMatrix.transformVector(vector);
+            return vector;
         };
         Corner.prototype.calculateFold = function () {
             var pointA = this.touchPointA;
@@ -247,6 +258,24 @@ var FlipJs;
                     return m.translate(new Vector2D(0, 0)).scale(1, 1);
             }
             return null;
+        };
+        /**
+         * Get local to texture transform matrix
+         */
+        Corner.prototype.getLocalToTextureMatrix = function (corner) {
+            var pageWidth = this.pageWidth;
+            var pageHeight = this.pageHeight;
+            var m = new Matrix2D();
+            switch (corner) {
+                case 'br':
+                    return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
+                case 'tr':
+                    return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
+                case 'bl':
+                    return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
+                case 'tl':
+                    return m.scale(1, 1).translate(new Vector2D(0, 0));
+            }
         };
         Corner.prototype.getCornerShift = function (corner) {
             switch (corner) {
@@ -345,6 +374,7 @@ $.fn.pageTurn = function () {
         var $scaler = $container.find('.scaler');
         var $pages = $container.find('.pages');
         var $zoomNode = $container.find('.page-turn-magnifier');
+        var $toolbarPage = $container.find('.page-turn-toolbar input');
         var corner;
         /** Front side of page being folded */
         var $frontPage;
@@ -356,8 +386,6 @@ $.fn.pageTurn = function () {
         var zoomK = 2;
         var zoomShift = new Vector2D(0, 0);
         var animationSemaphore = false;
-        var localToTextureMatrix;
-        var textureToLocalMatrix;
         var screenHeight = $scaler.height();
         var screenWidth = $scaler.width();
         var pageHeight = screenHeight;
@@ -403,22 +431,6 @@ $.fn.pageTurn = function () {
             }
             else {
                 return '';
-            }
-        }
-        /**
-         * Get local to texture transform matrix
-         */
-        function getLocalToTextureMatrix(corner) {
-            var m = new Matrix2D();
-            switch (corner) {
-                case 'br':
-                    return m.scale(-1, -1).translate(new Vector2D(pageWidth, pageHeight));
-                case 'tr':
-                    return m.scale(-1, 1).translate(new Vector2D(pageWidth, 0));
-                case 'bl':
-                    return m.scale(1, -1).translate(new Vector2D(0, pageHeight));
-                case 'tl':
-                    return m.scale(1, 1).translate(new Vector2D(0, 0));
             }
         }
         /**
@@ -478,8 +490,6 @@ $.fn.pageTurn = function () {
             $backPageImg = $backPage.find('img');
             touchCorner = cornerType;
             var touchDelta = corner.pagesDelta;
-            localToTextureMatrix = getLocalToTextureMatrix(cornerType);
-            textureToLocalMatrix = localToTextureMatrix.reverse();
             $container.toggleClass('active', !!touchDelta).toggleClass('active-next', touchDelta > 0).toggleClass('active-prev', touchDelta < 0);
         }
         /**
@@ -646,7 +656,7 @@ $.fn.pageTurn = function () {
                     return;
                 draggingPreview = null;
                 dragAnimate(new Vector2D(0, 0));
-            }).on('mousedown touchstart', '.page-turn.zoom-in', function (ev) {
+            }).on('mousedown touchstart', '.page-turn.zoom-in .page-turn-magnifier', function (ev) {
                 var $evtarget = $(ev.target);
                 if (state === 'init') {
                     mouseDownStart = getMousePosition(ev);
@@ -752,7 +762,7 @@ $.fn.pageTurn = function () {
             var pageXAxis = fold.pointA.sub(fold.pointD).normalize();
             var pageYAxis = fold.pointC.sub(fold.pointD).normalize();
             var pageMatrix = new Matrix2D([pageXAxis.x, pageXAxis.y, 0, pageYAxis.x, pageYAxis.y, 0, 0, 0, 1]).translate(fold.pointD);
-            return textureToLocalMatrix.multiply(pageMatrix);
+            return corner.textureToLocalMatrix.multiply(pageMatrix);
         }
         function setupBackPage(localFold) {
             var pageMatrix = getPageMatrix(localFold);
@@ -766,8 +776,7 @@ $.fn.pageTurn = function () {
             setupPage($backPage, $backPageImg, pageMatrix, clipperMatrix);
         }
         function setupFrontPage(localFold) {
-            var shift = textureToLocalMatrix.transformVector(new Vector2D(0, 0));
-            shift = corner.localToGlobalMatrix.transformVector(shift);
+            var shift = corner.textureToGlobal(new Vector2D(0, 0));
             var pageMatrix = new Matrix2D().translate(shift).multiply(corner.globalToLocalMatrix);
             var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
             var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by any number >1 to avoid zero axis length
@@ -802,6 +811,8 @@ $.fn.pageTurn = function () {
             $container.toggleClass('can-next-2', !!$next.length && !$next.hasClass('empty'));
             var twoSides = !!$pageA.length && !!$pageB.length && !$pageA.hasClass('empty') && !$pageB.hasClass('empty');
             $container.toggleClass('two-sides', twoSides);
+            var pageNum = getPageNumber();
+            $toolbarPage.val(pageNum.toString());
             preloadImages();
         }
         function getPageNumber() {
@@ -881,7 +892,7 @@ $.fn.pageTurn = function () {
             preloaders[src] = img;
         }
         function preloadNextImages() {
-            var $current = $pages.find('li.page-a');
+            var $current = $pages.children('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.next('li');
                 var $img = $current.find('img');
@@ -889,7 +900,7 @@ $.fn.pageTurn = function () {
             }
         }
         function preloadPrevImages() {
-            var $current = $pages.find('li.page-a');
+            var $current = $pages.children('li.page-a');
             for (var i = 0; i < 3; i++) {
                 $current = $current.prev('li');
                 var $img = $current.find('img');
@@ -899,13 +910,23 @@ $.fn.pageTurn = function () {
         function animateFlipForward() {
             var $newBase = $pages.children('li.page-b').next('li');
             if ($newBase.length) {
-                animateArrow('br');
+                if (!zoom()) {
+                    animateArrow('br');
+                }
+                else {
+                    shiftCurrent(2);
+                }
             }
         }
         function animateFlipBackward() {
             var $newBase = $pages.children('li.page-a').prev('li');
             if ($newBase.length) {
-                animateArrow('bl');
+                if (!zoom()) {
+                    animateArrow('bl');
+                }
+                else {
+                    shiftCurrent(-2);
+                }
             }
         }
         function getMaxPage() {
@@ -978,16 +999,19 @@ $.fn.pageTurn = function () {
 };
 $(document).ready(function () {
     var data = $('.page-turn').pageTurn();
-    $('body').on('dblclick', '.page-turn', function () {
+    $('body').on('dblclick', '.page-turn .page-turn-magnifier', function () {
         data.toggleZoom();
-    }).on('click', '.page-turn .nav-next-2', function () {
+    }).on('click', '.page-turn .go-next-2', function () {
         data.animateFlipForward();
-    }).on('click', '.page-turn .nav-prev-2', function () {
+    }).on('click', '.page-turn .go-prev-2', function () {
         data.animateFlipBackward();
-    }).on('click', '.page-turn .nav-next', function () {
+    }).on('click', '.page-turn .go-next', function () {
         data.shiftCurrent(1);
-    }).on('click', '.page-turn .nav-prev', function () {
+    }).on('click', '.page-turn .go-prev', function () {
         data.shiftCurrent(-1);
+    }).on('change', '.page-turn .go-page', function (ev) {
+        var $input = $(ev.target).closest('input');
+        data.navigate(parseInt($input.val(), 10));
     }).on('click', '.page-turn .bg, .page-turn .empty', function () {
         data.close();
     });
