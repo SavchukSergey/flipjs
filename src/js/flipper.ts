@@ -419,70 +419,6 @@ $.fn.pageTurn = function () {
             return pointM.mul(2);
         }
 
-        function getFoldB(pointA: Vector2D, pointB: Vector2D, pointC: Vector2D) {
-            var ba = pointB.sub(pointA);
-
-            if (ba.x == 0) {
-                return new Vector2D(pointA.x, pageHeight);
-            }
-            var kx = -pointA.x / ba.x;
-            if (kx >= 0 && kx <= 1) {
-                return ba.mul(kx).add(pointA);
-            }
-
-            var cb = pointC.sub(pointB);
-            var ky = (pageHeight - pointB.y) / cb.y;
-            return cb.mul(ky).add(pointB);
-        }
-
-        function calculateFoldByCorner(pointA: Vector2D): IFold {
-            var pointM = pointA.mul(0.5);
-            var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
-
-            var foldA: Vector2D;
-            if (symmetryLine.y != 0) {
-                var ka = -pointM.y / symmetryLine.y;
-                foldA = pointM.add(symmetryLine.mul(ka));
-            } else {
-                foldA = new Vector2D(pointM.x, 0);
-            }
-
-            var pointB: Vector2D;
-            if (foldA.x == pointA.x && foldA.y == pointA.y) {
-                pointB = pointA.add(new Vector2D(0, pageHeight));
-            } else {
-                pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
-            }
-
-            var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
-            var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
-
-            return {
-                pointA: pointA,
-                pointB: pointB,
-                pointC: pointC,
-                pointD: pointD,
-                pointE: new Vector2D(0, 0),
-                foldA: foldA,
-                foldB: getFoldB(pointA, pointB, pointC)
-            }
-        }
-
-        function calculateFold(): IFold {
-            var pointA = corner.getPoint();
-            var fold = calculateFoldByCorner(pointA);
-
-            return {
-                foldA: fold.foldA,
-                foldB: fold.foldB,
-                pointA: fold.pointA,
-                pointB: fold.pointB,
-                pointC: fold.pointC,
-                pointD: fold.pointD,
-                pointE: fold.pointE
-            };
-        }
-
         function dumpFold(localFold: IFold) {
             function debugPoint($point: IJQueryNodes, vector: Vector2D) {
                 vector = corner.localToGlobal(vector);
@@ -583,7 +519,7 @@ $.fn.pageTurn = function () {
         }
 
         function refresh() {
-            var localFold = calculateFold();
+            var localFold = corner.calculateFold();
 
             setupBackPage(localFold);
             setupFrontPage(localFold);

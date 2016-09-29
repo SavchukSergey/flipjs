@@ -57,6 +57,61 @@ namespace FlipJs {
             return this.localToGlobalMatrix.transformVector(vector);
         }
 
+        public calculateFold(): IFold {
+            var pointA = this.touchPointA;
+            var pageWidth = this.pageWidth;
+            var pageHeight = this.pageHeight;
+
+            var pointM = pointA.mul(0.5);
+            var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
+
+            var foldA: Vector2D;
+            if (symmetryLine.y != 0) {
+                var ka = -pointM.y / symmetryLine.y;
+                foldA = pointM.add(symmetryLine.mul(ka));
+            } else {
+                foldA = new Vector2D(pointM.x, 0);
+            }
+
+            var pointB: Vector2D;
+            if (foldA.x == pointA.x && foldA.y == pointA.y) {
+                pointB = pointA.add(new Vector2D(0, pageHeight));
+            } else {
+                pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
+            }
+
+            var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
+            var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
+
+            return {
+                pointA: pointA,
+                pointB: pointB,
+                pointC: pointC,
+                pointD: pointD,
+                pointE: new Vector2D(0, 0),
+                foldA: foldA,
+                foldB: this.getFoldB(pointA, pointB, pointC)
+            }
+        }
+
+        private getFoldB(pointA: Vector2D, pointB: Vector2D, pointC: Vector2D) {
+            var pageHeight = this.pageHeight;
+
+            var ba = pointB.sub(pointA);
+
+            if (ba.x == 0) {
+                return new Vector2D(pointA.x, pageHeight);
+            }
+            var kx = -pointA.x / ba.x;
+            if (kx >= 0 && kx <= 1) {
+                return ba.mul(kx).add(pointA);
+            }
+
+            var cb = pointC.sub(pointB);
+            var ky = (pageHeight - pointB.y) / cb.y;
+            return cb.mul(ky).add(pointB);
+        }
+
 
         /**
          * Check pointA to spine distance. We dont want page to be torn...

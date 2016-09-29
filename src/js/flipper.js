@@ -159,6 +159,53 @@ var FlipJs;
         Corner.prototype.localToGlobal = function (vector) {
             return this.localToGlobalMatrix.transformVector(vector);
         };
+        Corner.prototype.calculateFold = function () {
+            var pointA = this.touchPointA;
+            var pageWidth = this.pageWidth;
+            var pageHeight = this.pageHeight;
+            var pointM = pointA.mul(0.5);
+            var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
+            var foldA;
+            if (symmetryLine.y != 0) {
+                var ka = -pointM.y / symmetryLine.y;
+                foldA = pointM.add(symmetryLine.mul(ka));
+            }
+            else {
+                foldA = new Vector2D(pointM.x, 0);
+            }
+            var pointB;
+            if (foldA.x == pointA.x && foldA.y == pointA.y) {
+                pointB = pointA.add(new Vector2D(0, pageHeight));
+            }
+            else {
+                pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
+            }
+            var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
+            var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
+            return {
+                pointA: pointA,
+                pointB: pointB,
+                pointC: pointC,
+                pointD: pointD,
+                pointE: new Vector2D(0, 0),
+                foldA: foldA,
+                foldB: this.getFoldB(pointA, pointB, pointC)
+            };
+        };
+        Corner.prototype.getFoldB = function (pointA, pointB, pointC) {
+            var pageHeight = this.pageHeight;
+            var ba = pointB.sub(pointA);
+            if (ba.x == 0) {
+                return new Vector2D(pointA.x, pageHeight);
+            }
+            var kx = -pointA.x / ba.x;
+            if (kx >= 0 && kx <= 1) {
+                return ba.mul(kx).add(pointA);
+            }
+            var cb = pointC.sub(pointB);
+            var ky = (pageHeight - pointB.y) / cb.y;
+            return cb.mul(ky).add(pointB);
+        };
         /**
          * Check pointA to spine distance. We dont want page to be torn...
          */
@@ -649,62 +696,6 @@ $.fn.pageTurn = function () {
             var pointM = new Vector2D(fx - dpx, dpy);
             return pointM.mul(2);
         }
-        function getFoldB(pointA, pointB, pointC) {
-            var ba = pointB.sub(pointA);
-            if (ba.x == 0) {
-                return new Vector2D(pointA.x, pageHeight);
-            }
-            var kx = -pointA.x / ba.x;
-            if (kx >= 0 && kx <= 1) {
-                return ba.mul(kx).add(pointA);
-            }
-            var cb = pointC.sub(pointB);
-            var ky = (pageHeight - pointB.y) / cb.y;
-            return cb.mul(ky).add(pointB);
-        }
-        function calculateFoldByCorner(pointA) {
-            var pointM = pointA.mul(0.5);
-            var symmetryLine = pointM.rotateClockwise90(); // starts at pointM and goes to both directions
-            var foldA;
-            if (symmetryLine.y != 0) {
-                var ka = -pointM.y / symmetryLine.y;
-                foldA = pointM.add(symmetryLine.mul(ka));
-            }
-            else {
-                foldA = new Vector2D(pointM.x, 0);
-            }
-            var pointB;
-            if (foldA.x == pointA.x && foldA.y == pointA.y) {
-                pointB = pointA.add(new Vector2D(0, pageHeight));
-            }
-            else {
-                pointB = foldA.sub(pointA).rotateClockwise90().changeLength(pageHeight).add(pointA);
-            }
-            var pointC = pointA.sub(pointB).rotateClockwise90().changeLength(pageWidth).add(pointB);
-            var pointD = pointB.sub(pointC).rotateClockwise90().changeLength(pageHeight).add(pointC);
-            return {
-                pointA: pointA,
-                pointB: pointB,
-                pointC: pointC,
-                pointD: pointD,
-                pointE: new Vector2D(0, 0),
-                foldA: foldA,
-                foldB: getFoldB(pointA, pointB, pointC)
-            };
-        }
-        function calculateFold() {
-            var pointA = corner.getPoint();
-            var fold = calculateFoldByCorner(pointA);
-            return {
-                foldA: fold.foldA,
-                foldB: fold.foldB,
-                pointA: fold.pointA,
-                pointB: fold.pointB,
-                pointC: fold.pointC,
-                pointD: fold.pointD,
-                pointE: fold.pointE
-            };
-        }
         function dumpFold(localFold) {
             function debugPoint($point, vector) {
                 vector = corner.localToGlobal(vector);
@@ -789,7 +780,7 @@ $.fn.pageTurn = function () {
             setupPage($frontPage, $frontPageImg, pageMatrix, clipperMatrix);
         }
         function refresh() {
-            var localFold = calculateFold();
+            var localFold = corner.calculateFold();
             setupBackPage(localFold);
             setupFrontPage(localFold);
             // dumpFold(localFold);
