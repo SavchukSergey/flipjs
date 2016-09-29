@@ -1,3 +1,50 @@
+var Vector2D = (function () {
+    function Vector2D(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    Vector2D.prototype.length = function () {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    };
+    ;
+    Vector2D.prototype.sub = function (other) {
+        return new Vector2D(this.x - other.x, this.y - other.y);
+    };
+    ;
+    Vector2D.prototype.add = function (other) {
+        return new Vector2D(this.x + other.x, this.y + other.y);
+    };
+    ;
+    Vector2D.prototype.mul = function (val) {
+        return new Vector2D(this.x * val, this.y * val);
+    };
+    ;
+    Vector2D.prototype.rotateClockwise90 = function () {
+        return new Vector2D(this.y, -this.x);
+    };
+    ;
+    Vector2D.prototype.rotateCounterClockwise90 = function () {
+        return new Vector2D(-this.y, this.x);
+    };
+    ;
+    Vector2D.prototype.changeLength = function (val) {
+        var len = this.length();
+        if (!len)
+            len = 1;
+        return this.mul(val / len);
+    };
+    ;
+    Vector2D.prototype.normalize = function () {
+        return this.changeLength(1);
+    };
+    Vector2D.prototype.toString = function () {
+        return "{" + this.x + ", " + this.y + "}";
+    };
+    ;
+    return Vector2D;
+}());
+///<reference path="vector-2d.ts" />
+///<reference path="jquery.d.ts" />
 ///<reference path="jquery.d.ts" />
 ///<reference path="flipper.d.ts" />
 $(document).ready(function () {
@@ -104,61 +151,18 @@ var Matrix2D = (function () {
     };
     return Matrix2D;
 }());
-var Vector2D = (function () {
-    function Vector2D(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    Vector2D.prototype.length = function () {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    };
-    ;
-    Vector2D.prototype.sub = function (other) {
-        return new Vector2D(this.x - other.x, this.y - other.y);
-    };
-    ;
-    Vector2D.prototype.add = function (other) {
-        return new Vector2D(this.x + other.x, this.y + other.y);
-    };
-    ;
-    Vector2D.prototype.mul = function (val) {
-        return new Vector2D(this.x * val, this.y * val);
-    };
-    ;
-    Vector2D.prototype.rotateClockwise90 = function () {
-        return new Vector2D(this.y, -this.x);
-    };
-    ;
-    Vector2D.prototype.rotateCounterClockwise90 = function () {
-        return new Vector2D(-this.y, this.x);
-    };
-    ;
-    Vector2D.prototype.changeLength = function (val) {
-        var len = this.length();
-        if (!len)
-            len = 1;
-        return this.mul(val / len);
-    };
-    ;
-    Vector2D.prototype.normalize = function () {
-        return this.changeLength(1);
-    };
-    Vector2D.prototype.toString = function () {
-        return "{" + this.x + ", " + this.y + "}";
-    };
-    ;
-    return Vector2D;
-}());
 ///<reference path="vector-2d.ts" />
 ///<reference path="matrix-2d.ts" />
 ///<reference path="vector-2d.ts" />
 ///<reference path="fold.ts" />
 ///<reference path="jquery.d.ts" />
 ///<reference path="flipper.d.ts" />
+///<reference path="draggable.ts" />
 $.fn.pageTurn = function () {
     function init($container) {
         var $scaler = $container.find('.scaler');
         var $pages = $container.find('.pages');
+        var $zoomNode = $container.find('.page-turn-magnifier');
         /** Front side of page being folded */
         var $frontPage;
         var $frontPageImg;
@@ -168,6 +172,8 @@ $.fn.pageTurn = function () {
         var touchPointA;
         var touchCorner = '';
         var touchDelta = 0;
+        var zoomK = 1.5;
+        var zoomShift = new Vector2D(0, 0);
         var animationSemaphore = false;
         var globalToLocalMatrix;
         var localToGlobalMatrix;
@@ -381,25 +387,44 @@ $.fn.pageTurn = function () {
                 var start = new Vector2D(rect.left, rect.top);
                 return {
                     rel: pos.sub(start),
+                    vector: pos.sub(mouseDownStart),
                     $handle: $handle,
                     event: ev
                 };
             }
             function dragStart(ev) {
                 var args = createDragArgs(ev);
-                var corner = getCornerType(args.$handle);
-                initCorner(corner);
-                dragging = {};
+                dragging = {
+                    zoom: zoom(),
+                };
+                if (dragging.zoom) {
+                }
+                else {
+                    dragStartFold(args);
+                }
                 draggingPreview = null;
                 return true;
             }
+            function dragStartFold(args) {
+                var corner = getCornerType(args.$handle);
+                initCorner(corner);
+            }
             function dragMove(ev) {
                 if (dragging) {
-                    dragFold(ev);
+                    var args = createDragArgs(ev);
+                    if (dragging.zoom) {
+                        dragMoveZoom(args);
+                    }
+                    else {
+                        dragMoveFold(args);
+                    }
                 }
             }
-            function dragFold(ev) {
-                var args = createDragArgs(ev);
+            function dragMoveZoom(args) {
+                var m = new Matrix2D().scale(1.5, 1.5).translate(zoomShift).translate(args.vector);
+                $zoomNode.css('transform', m.getTransformExpression());
+            }
+            function dragMoveFold(args) {
                 touchPointA = globalToLocalMatrix.transformVector(args.rel);
                 refresh(touchPointA);
             }
@@ -417,15 +442,27 @@ $.fn.pageTurn = function () {
             }
             function dragEnd(ev) {
                 if (dragging) {
-                    if (touchPointA.x > pageWidth) {
-                        dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
-                            shiftCurrent(touchDelta);
-                        });
+                    if (dragging.zoom) {
+                        dragEndZoom(ev);
                     }
                     else {
-                        dragCancel(ev);
+                        dragEndFold(ev);
                     }
                     dragging = null;
+                }
+            }
+            function dragEndZoom(ev) {
+                var args = createDragArgs(ev);
+                zoomShift = zoomShift.add(args.vector);
+            }
+            function dragEndFold(ev) {
+                if (touchPointA.x > pageWidth) {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
+                        shiftCurrent(touchDelta);
+                    });
+                }
+                else {
+                    dragCancel(ev);
                 }
             }
             function dragCancel(ev) {
@@ -464,19 +501,29 @@ $.fn.pageTurn = function () {
                     $handle = $evtarget.closest('.corner');
                 }
             }).on('mousemove touchmove', '.page-turn .corner', function (ev) {
-                if (dragging)
+                if (dragging || zoom())
                     return;
                 draggingPreview = {};
+                mouseDownStart = new Vector2D(-100, -100);
                 $handle = $(ev.target).closest('.corner');
                 var args = createDragArgs(ev);
                 var corner = getCornerType(args.$handle);
                 initCorner(corner);
-                dragFold(ev);
+                dragMoveFold(args);
             }).on('mouseout touchend', '.page-turn .corner', function (ev) {
                 if (!draggingPreview)
                     return;
                 draggingPreview = null;
                 dragAnimate(new Vector2D(0, 0));
+            }).on('mousedown touchstart', '.page-turn.zoom-in', function (ev) {
+                var $evtarget = $(ev.target);
+                if (state === 'init') {
+                    mouseDownStart = getMousePosition(ev);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    state = 'threshold';
+                    $handle = $evtarget.closest('.page-turn');
+                }
             }).bind('mousemove touchmove', function (ev) {
                 return dragCheck(ev, true);
             }).bind('mousewheel', function (ev) {
@@ -488,9 +535,13 @@ $.fn.pageTurn = function () {
                     dragEnd(ev);
                 }
                 else if (state === 'threshold') {
-                    animateArrow(getCornerType($handle));
+                    $handle = $(ev.target).closest('.corner');
+                    if ($handle.length) {
+                        animateArrow(getCornerType($handle));
+                    }
                 }
                 state = 'init';
+            }).bind('click', '.page-turn .corner', function (ev) {
             }).bind('keydown', function (ev) {
                 if (!dragging)
                     return;
@@ -619,13 +670,9 @@ $.fn.pageTurn = function () {
         function setupPage($page, $img, pageMatrix, clipperMatrix) {
             pageMatrix = pageMatrix.multiply(localToGlobalMatrix);
             clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
-            $page.css({
-                transform: clipperMatrix.getTransformExpression()
-            });
+            $page.css('transform', clipperMatrix.getTransformExpression());
             pageMatrix = pageMatrix.multiply(clipperMatrix.reverse()); //compensate clipper matrix
-            $img.css({
-                transform: pageMatrix.getTransformExpression()
-            });
+            $img.css('transform', pageMatrix.getTransformExpression());
         }
         function getPageMatrix(fold) {
             var pageXAxis = fold.pointA.sub(fold.pointD).normalize();
@@ -813,6 +860,28 @@ $.fn.pageTurn = function () {
         function close() {
             window.location.hash = '#';
         }
+        function zoom() {
+            return $container.hasClass('zoom-in');
+        }
+        function zoomIn() {
+            $container.addClass('zoom-in');
+            zoomShift = new Vector2D(0, 0);
+            var m = new Matrix2D().scale(zoomK, zoomK);
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
+        function zoomOut() {
+            $container.removeClass('zoom-in');
+            var m = new Matrix2D();
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
+        function toggleZoom() {
+            if (zoom()) {
+                zoomOut();
+            }
+            else {
+                zoomIn();
+            }
+        }
         refreshState();
         buildPreview();
         return {
@@ -820,7 +889,10 @@ $.fn.pageTurn = function () {
             animateFlipForward: animateFlipForward,
             shiftCurrent: shiftCurrent,
             navigate: navigate,
-            close: close
+            close: close,
+            zoomIn: zoomIn,
+            zoomOut: zoomOut,
+            toggleZoom: toggleZoom
         };
     }
     var data = this.data('page-turn');
@@ -832,7 +904,9 @@ $.fn.pageTurn = function () {
 };
 $(document).ready(function () {
     var data = $('.page-turn').pageTurn();
-    $('body').on('click', '.page-turn .nav-next-2', function () {
+    $('body').on('dblclick', '.page-turn', function () {
+        data.toggleZoom();
+    }).on('click', '.page-turn .nav-next-2', function () {
         data.animateFlipForward();
     }).on('click', '.page-turn .nav-prev-2', function () {
         data.animateFlipBackward();

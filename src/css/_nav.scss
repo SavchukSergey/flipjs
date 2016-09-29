@@ -1,7 +1,8 @@
 @import '_variables.scss';
 
 .page-turn {
-    &.animating {
+    
+    &.animating, &.zoom-in {
         a.nav {
             display: none !important;
         }

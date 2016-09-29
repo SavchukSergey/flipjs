@@ -34,4 +34,10 @@
         }
     }
 
+    &.zoom-in {
+        div.preview {
+            display: none;
+        }
+    }
+
 }

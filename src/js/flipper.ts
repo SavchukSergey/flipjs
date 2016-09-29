@@ -3,12 +3,14 @@
 ///<reference path="fold.ts" />
 ///<reference path="jquery.d.ts" />
 ///<reference path="flipper.d.ts" />
+///<reference path="draggable.ts" />
 
 $.fn.pageTurn = function () {
 
     function init($container: IJQueryNodes): IFlipperControl {
         var $scaler = $container.find('.scaler');
         var $pages = $container.find('.pages');
+        var $zoomNode = $container.find('.page-turn-magnifier');
 
         /** Front side of page being folded */
         var $frontPage: IJQueryNodes;
@@ -21,6 +23,9 @@ $.fn.pageTurn = function () {
         var touchPointA: Vector2D;
         var touchCorner = '';
         var touchDelta = 0;
+
+        var zoomK = 1.5;
+        var zoomShift = new Vector2D(0, 0);
 
         var animationSemaphore = false;
 
@@ -50,7 +55,7 @@ $.fn.pageTurn = function () {
                 }
                 var $originalImg = $node.find('img');
                 var url = $originalImg.attr('data-preview-src') || $originalImg.attr('src');
-                var $img = $('<img />').attr('src', url); 
+                var $img = $('<img />').attr('src', url);
                 var $li = $('<li></li>');
                 var $a = $('<a></a>').attr('href', `#magazine:${page}`).append($img);
                 $li.append($a);
@@ -252,12 +257,13 @@ $.fn.pageTurn = function () {
                 return a.sub(b).length() > 5;
             }
 
-            function createDragArgs(ev: IJQueryEvent) {
+            function createDragArgs(ev: IJQueryEvent): IDragArgs {
                 var pos = getMousePosition(ev);
                 var rect = $scaler[0].getBoundingClientRect();
                 var start = new Vector2D(rect.left, rect.top);
                 return {
                     rel: pos.sub(start),
+                    vector: pos.sub(mouseDownStart),
                     $handle: $handle,
                     event: ev
                 };
@@ -265,22 +271,43 @@ $.fn.pageTurn = function () {
 
             function dragStart(ev: IJQueryEvent) {
                 var args = createDragArgs(ev);
-                var corner = getCornerType(args.$handle);
-                initCorner(corner);
 
-                dragging = {};
+                dragging = {
+                    zoom: zoom(),
+                };
+
+                if (dragging.zoom) {
+
+                } else {
+                    dragStartFold(args);
+                }
+
                 draggingPreview = null;
                 return true;
             }
 
+            function dragStartFold(args: IDragArgs) {
+                var corner = getCornerType(args.$handle);
+                initCorner(corner);
+            }
+
             function dragMove(ev: IJQueryEvent) {
                 if (dragging) {
-                    dragFold(ev);
+                    var args = createDragArgs(ev);
+                    if (dragging.zoom) {
+                        dragMoveZoom(args);
+                    } else {
+                        dragMoveFold(args);
+                    }
                 }
             }
 
-            function dragFold(ev: IJQueryEvent) {
-                var args = createDragArgs(ev);
+            function dragMoveZoom(args: IDragArgs) {
+                var m = new Matrix2D().scale(1.5, 1.5).translate(zoomShift).translate(args.vector);
+                $zoomNode.css('transform', m.getTransformExpression());
+            }
+
+            function dragMoveFold(args: IDragArgs) {
                 touchPointA = globalToLocalMatrix.transformVector(args.rel);
                 refresh(touchPointA);
             }
@@ -300,14 +327,27 @@ $.fn.pageTurn = function () {
 
             function dragEnd(ev: IJQueryEvent) {
                 if (dragging) {
-                    if (touchPointA.x > pageWidth) {
-                        dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
-                            shiftCurrent(touchDelta);
-                        });
+                    if (dragging.zoom) {
+                        dragEndZoom(ev);
                     } else {
-                        dragCancel(ev);
+                        dragEndFold(ev);
                     }
                     dragging = null;
+                }
+            }
+
+            function dragEndZoom(ev: IJQueryEvent) {
+                var args = createDragArgs(ev);
+                zoomShift = zoomShift.add(args.vector);
+            }
+
+            function dragEndFold(ev: IJQueryEvent) {
+                if (touchPointA.x > pageWidth) {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
+                        shiftCurrent(touchDelta);
+                    });
+                } else {
+                    dragCancel(ev);
                 }
             }
 
@@ -347,20 +387,30 @@ $.fn.pageTurn = function () {
                     $handle = $evtarget.closest('.corner');
                 }
             }).on('mousemove touchmove', '.page-turn .corner', (ev: IJQueryEvent) => {
-                if (dragging) return;
+                if (dragging || zoom()) return;
                 draggingPreview = {};
+                mouseDownStart = new Vector2D(-100, -100);
                 $handle = $(ev.target).closest('.corner');
                 var args = createDragArgs(ev);
                 var corner = getCornerType(args.$handle);
                 initCorner(corner);
-                dragFold(ev);
+                dragMoveFold(args);
             }).on('mouseout touchend', '.page-turn .corner', (ev: IJQueryEvent) => {
                 if (!draggingPreview) return;
                 draggingPreview = null;
                 dragAnimate(new Vector2D(0, 0));
+            }).on('mousedown touchstart', '.page-turn.zoom-in', (ev: IJQueryEvent) => {
+                var $evtarget = $(ev.target);
+                if (state === 'init') {
+                    mouseDownStart = getMousePosition(ev);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    state = 'threshold';
+                    $handle = $evtarget.closest('.page-turn');
+                }
             }).bind('mousemove touchmove', (ev: IJQueryEvent) => {
                 return dragCheck(ev, true);
-            }).bind('mousewheel', function (ev) {
+            }).bind('mousewheel', function (ev: IJQueryEvent) {
                 return dragCheck(ev, false);
             }).bind('mouseup touchend', (ev: IJQueryEvent) => {
                 if (state === 'drag') {
@@ -368,9 +418,13 @@ $.fn.pageTurn = function () {
                     ev.stopPropagation();
                     dragEnd(ev);
                 } else if (state === 'threshold') {
-                    animateArrow(getCornerType($handle));
+                    $handle = $(ev.target).closest('.corner');
+                    if ($handle.length) {
+                        animateArrow(getCornerType($handle));
+                    }
                 }
                 state = 'init';
+            }).bind('click', '.page-turn .corner', (ev: IJQueryEvent) => {
             }).bind('keydown', (ev: IJQueryEvent) => {
                 if (!dragging) return;
 
@@ -522,15 +576,11 @@ $.fn.pageTurn = function () {
             pageMatrix = pageMatrix.multiply(localToGlobalMatrix);
             clipperMatrix = clipperMatrix.multiply(localToGlobalMatrix);
 
-            $page.css({
-                transform: clipperMatrix.getTransformExpression()
-            })
+            $page.css('transform', clipperMatrix.getTransformExpression());
 
             pageMatrix = pageMatrix.multiply(clipperMatrix.reverse()); //compensate clipper matrix
 
-            $img.css({
-                transform: pageMatrix.getTransformExpression()
-            })
+            $img.css('transform', pageMatrix.getTransformExpression());
         }
 
         function getPageMatrix(fold: IFold) {
@@ -750,6 +800,31 @@ $.fn.pageTurn = function () {
             window.location.hash = '#';
         }
 
+        function zoom() {
+            return $container.hasClass('zoom-in');
+        }
+
+        function zoomIn() {
+            $container.addClass('zoom-in');
+            zoomShift = new Vector2D(0, 0);
+            var m = new Matrix2D().scale(zoomK, zoomK);
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
+
+        function zoomOut() {
+            $container.removeClass('zoom-in');
+            var m = new Matrix2D();
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
+
+        function toggleZoom() {
+            if (zoom()) {
+                zoomOut();
+            } else {
+                zoomIn();
+            }
+        }
+
         refreshState();
 
         buildPreview();
@@ -759,7 +834,10 @@ $.fn.pageTurn = function () {
             animateFlipForward: animateFlipForward,
             shiftCurrent: shiftCurrent,
             navigate: navigate,
-            close: close
+            close: close,
+            zoomIn: zoomIn,
+            zoomOut: zoomOut,
+            toggleZoom: toggleZoom
         }
     }
 
@@ -772,7 +850,9 @@ $.fn.pageTurn = function () {
 
 $(document).ready(function () {
     var data = $('.page-turn').pageTurn();
-    $('body').on('click', '.page-turn .nav-next-2', () => {
+    $('body').on('dblclick', '.page-turn', () => {
+        data.toggleZoom();
+    }).on('click', '.page-turn .nav-next-2', () => {
         data.animateFlipForward();
     }).on('click', '.page-turn .nav-prev-2', () => {
         data.animateFlipBackward();

@@ -15,6 +15,12 @@ interface IFlipperControl {
     
     navigate(page: number);
 
+    zoomIn();
+
+    zoomOut();
+
+    toggleZoom();
+
     close();
     
 }
