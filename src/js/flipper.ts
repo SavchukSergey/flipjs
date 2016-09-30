@@ -229,7 +229,7 @@ $.fn.pageTurn = function () {
             }
 
             function dragMoveZoom(args: IDragArgs) {
-                var m = new Matrix2D().scale(1.5, 1.5).translate(zoomShift).translate(args.vector);
+                var m = new Matrix2D().scale(zoomK, zoomK).translate(zoomShift).translate(args.vector);
                 $zoomNode.css('transform', m.getTransformExpression());
             }
 

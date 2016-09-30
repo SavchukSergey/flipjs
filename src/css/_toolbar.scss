@@ -31,6 +31,9 @@
         input {
             font-size: $toolbar-font-size;
             text-align: center;
+            display: inline-block;
+            width: 5em;
+            margin: 0;
         }
 
         .go-prev ,.go-prev-2 {
