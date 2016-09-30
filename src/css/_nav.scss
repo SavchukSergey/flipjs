@@ -60,15 +60,10 @@
     a.go-next, a.go-prev, a.go-next-2, a.go-prev-2 {
         color: $arrow-disabled-color;
         text-decoration: none;
-        display: none;
-
-        &.show-disabled {
-            display: inline-block;
-        }
+        display: inline-block;
     }
 
     &.can-next-2 a.go-next-2, &.can-prev-2 a.go-prev-2, &.can-next a.go-next, &.can-prev a.go-prev {
-        display: inline-block;
         color: $arrow-color;
     }
 
