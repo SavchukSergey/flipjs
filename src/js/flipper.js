@@ -3,34 +3,37 @@ var Matrix2D = (function () {
         this.m = elements || [1, 0, 0, 0, 1, 0, 0, 0, 1];
     }
     Matrix2D.prototype.transformVector = function (v) {
-        return new Vector2D(v.x * this.m[0] + v.y * this.m[3] + this.m[6], v.x * this.m[1] + v.y * this.m[4] + this.m[7]);
+        var m = this.m;
+        return new Vector2D(v.x * m[0] + v.y * m[3] + m[6], v.x * m[1] + v.y * m[4] + m[7]);
     };
     Matrix2D.prototype.determinant = function () {
-        var ax = this.m[0];
-        var ay = this.m[1];
-        var az = this.m[2];
-        var bx = this.m[3];
-        var by = this.m[4];
-        var bz = this.m[5];
-        var cx = this.m[6];
-        var cy = this.m[7];
-        var cz = this.m[8];
+        var m = this.m;
+        var ax = m[0];
+        var ay = m[1];
+        var az = m[2];
+        var bx = m[3];
+        var by = m[4];
+        var bz = m[5];
+        var cx = m[6];
+        var cy = m[7];
+        var cz = m[8];
         var dx = by * cz - bz * cy;
         var dy = bz * cx - bx * cz;
         var dz = bx * cy - by * cx;
         return ax * dx + ay * dy + az * dz;
     };
     Matrix2D.prototype.multiplyArray = function (other) {
+        var m = this.m;
         return new Matrix2D([
-            this.m[0] * other[0] + this.m[1] * other[3] + this.m[2] * other[6],
-            this.m[0] * other[1] + this.m[1] * other[4] + this.m[2] * other[7],
-            this.m[0] * other[2] + this.m[1] * other[5] + this.m[2] * other[8],
-            this.m[3] * other[0] + this.m[4] * other[3] + this.m[5] * other[6],
-            this.m[3] * other[1] + this.m[4] * other[4] + this.m[5] * other[7],
-            this.m[3] * other[2] + this.m[4] * other[5] + this.m[5] * other[8],
-            this.m[6] * other[0] + this.m[7] * other[3] + this.m[8] * other[6],
-            this.m[6] * other[1] + this.m[7] * other[4] + this.m[8] * other[7],
-            this.m[6] * other[2] + this.m[7] * other[5] + this.m[8] * other[8]
+            m[0] * other[0] + m[1] * other[3] + m[2] * other[6],
+            m[0] * other[1] + m[1] * other[4] + m[2] * other[7],
+            m[0] * other[2] + m[1] * other[5] + m[2] * other[8],
+            m[3] * other[0] + m[4] * other[3] + m[5] * other[6],
+            m[3] * other[1] + m[4] * other[4] + m[5] * other[7],
+            m[3] * other[2] + m[4] * other[5] + m[5] * other[8],
+            m[6] * other[0] + m[7] * other[3] + m[8] * other[6],
+            m[6] * other[1] + m[7] * other[4] + m[8] * other[7],
+            m[6] * other[2] + m[7] * other[5] + m[8] * other[8]
         ]);
     };
     Matrix2D.prototype.multiply = function (other) {
@@ -49,16 +52,17 @@ var Matrix2D = (function () {
         return this.multiplyArray([ca, sa, 0, -sa, ca, 0, 0, 0, 1]);
     };
     Matrix2D.prototype.reverse = function () {
+        var m = this.m;
         var det = this.determinant();
-        var ux = this.m[0];
-        var uy = this.m[3];
-        var uz = this.m[6];
-        var vx = this.m[1];
-        var vy = this.m[4];
-        var vz = this.m[7];
-        var wx = this.m[2];
-        var wy = this.m[5];
-        var wz = this.m[8];
+        var ux = m[0];
+        var uy = m[3];
+        var uz = m[6];
+        var vx = m[1];
+        var vy = m[4];
+        var vz = m[7];
+        var wx = m[2];
+        var wy = m[5];
+        var wz = m[8];
         var c11 = (vy * wz - wy * vz) / det;
         var c12 = (wy * uz - uy * wz) / det;
         var c13 = (uy * vz - vy * uz) / det;
@@ -77,7 +81,9 @@ var Matrix2D = (function () {
         return Math.round(v * 1e8) / 1e8;
     };
     Matrix2D.prototype.getTransformExpression = function () {
-        return "matrix(" + this.roundFloat(this.m[0]) + ", " + this.roundFloat(this.m[1]) + ", " + this.roundFloat(this.m[3]) + ", " + this.roundFloat(this.m[4]) + ", " + this.roundFloat(this.m[6]) + ", " + this.roundFloat(this.m[7]) + ")";
+        var self = this;
+        var m = self.m;
+        return "matrix(" + self.roundFloat(m[0]) + ", " + self.roundFloat(m[1]) + ", " + self.roundFloat(m[3]) + ", " + self.roundFloat(m[4]) + ", " + self.roundFloat(m[6]) + ", " + self.roundFloat(m[7]) + ")";
     };
     return Matrix2D;
 }());
@@ -598,7 +604,7 @@ $.fn.pageTurn = function () {
             function dragEndFold(ev) {
                 var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
-                    dragAnimate(corner.spinePointA).done(function () {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
                         shiftCurrent(corner.pagesDelta);
                     });
                 }

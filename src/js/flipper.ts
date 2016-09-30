@@ -270,7 +270,7 @@ $.fn.pageTurn = function () {
             function dragEndFold(ev: IJQueryEvent) {
                 var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
-                    dragAnimate(corner.spinePointA).done(() => {
+                    dragAnimate(new Vector2D(screenWidth, 0)).done(() => {
                         shiftCurrent(corner.pagesDelta);
                     });
                 } else {
