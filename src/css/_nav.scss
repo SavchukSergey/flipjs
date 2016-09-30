@@ -68,32 +68,11 @@
     }
 
     &.can-next-2 a.go-next-2, &.can-prev-2 a.go-prev-2, &.can-next a.go-next, &.can-prev a.go-prev {
+        display: inline-block;
         color: $arrow-color;
     }
 
-    @media #{$media-desktop-or-greater} {
-        a.go-next, a.go-prev {
-            display: none !important;
-        }
-
-        &.can-next-2 {
-            a.go-next-2 {
-                display: inline-block;
-            }
-        }
-
-        &.can-prev-2 {
-            a.go-prev-2 {
-                display: inline-block;
-            }
-        }
-    }
-
     @media #{$media-tablet-or-smaller} {
-        a.go-next-2, a.go-prev-2 {
-            display: none !important;
-        }
-        
         a.nav {
             font-size: 2em;
         }

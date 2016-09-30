@@ -1041,24 +1041,26 @@ $.fn.pageTurn = function () {
     return data;
 };
 $(document).ready(function () {
-    var data = $('.page-turn').pageTurn();
-    $('body').on('dblclick', '.page-turn .page-turn-magnifier', function () {
-        data.toggleZoom();
-    }).on('click', '.page-turn .go-next-2', function () {
-        data.animateFlipForward();
-    }).on('click', '.page-turn .go-prev-2', function () {
-        data.animateFlipBackward();
-    }).on('click', '.page-turn .go-next', function () {
-        data.shiftCurrent(1);
-    }).on('click', '.page-turn .go-prev', function () {
-        data.shiftCurrent(-1);
+    function getControl(ev) {
+        return $(ev.target).closest('.page-turn').pageTurn();
+    }
+    $('body').on('dblclick', '.page-turn .page-turn-magnifier', function (ev) {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .go-next-2', function (ev) {
+        getControl(ev).animateFlipForward();
+    }).on('click', '.page-turn .go-prev-2', function (ev) {
+        getControl(ev).animateFlipBackward();
+    }).on('click', '.page-turn .go-next', function (ev) {
+        getControl(ev).shiftCurrent(1);
+    }).on('click', '.page-turn .go-prev', function (ev) {
+        getControl(ev).shiftCurrent(-1);
     }).on('change', '.page-turn .go-page', function (ev) {
         var $input = $(ev.target).closest('input');
-        data.navigate(parseInt($input.val(), 10));
-    }).on('click', '.page-turn .fullscreen', function () {
-        data.toggleZoom();
-    }).on('click', '.page-turn .bg, .page-turn .empty', function () {
-        data.close();
+        getControl(ev).navigate(parseInt($input.val(), 10));
+    }).on('click', '.page-turn .fullscreen', function (ev) {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .bg, .page-turn .empty', function (ev) {
+        getControl(ev).close();
     });
 });
 

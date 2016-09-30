@@ -19,6 +19,17 @@
         height: 100%;
     }
 
+    @media #{$media-desktop-or-greater} {
+        .page-turn-hide-large {
+            display: none !important;
+        }
+    }
+    @media #{$media-tablet-or-smaller} {
+        .page-turn-hide-small {
+            display: none !important;
+        }
+    }
+
 }
 
 .page-turn {

@@ -762,24 +762,27 @@ $.fn.pageTurn = function () {
 };
 
 $(document).ready(function () {
-    var data = $('.page-turn').pageTurn();
-    $('body').on('dblclick', '.page-turn .page-turn-magnifier', () => {
-        data.toggleZoom();
-    }).on('click', '.page-turn .go-next-2', () => {
-        data.animateFlipForward();
-    }).on('click', '.page-turn .go-prev-2', () => {
-        data.animateFlipBackward();
-    }).on('click', '.page-turn .go-next', () => {
-        data.shiftCurrent(1);
-    }).on('click', '.page-turn .go-prev', () => {
-        data.shiftCurrent(-1);
+    function getControl(ev: IJQueryEvent) {
+        return $(ev.target).closest('.page-turn').pageTurn();
+    }
+
+    $('body').on('dblclick', '.page-turn .page-turn-magnifier', (ev: IJQueryEvent) => {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .go-next-2', (ev: IJQueryEvent) => {
+        getControl(ev).animateFlipForward();
+    }).on('click', '.page-turn .go-prev-2', (ev: IJQueryEvent) => {
+        getControl(ev).animateFlipBackward();
+    }).on('click', '.page-turn .go-next', (ev: IJQueryEvent) => {
+        getControl(ev).shiftCurrent(1);
+    }).on('click', '.page-turn .go-prev', (ev: IJQueryEvent) => {
+        getControl(ev).shiftCurrent(-1);
     }).on('change', '.page-turn .go-page', (ev: IJQueryEvent) => {
         var $input = $(ev.target).closest('input');
-        data.navigate(parseInt($input.val(), 10));
-    }).on('click', '.page-turn .fullscreen', () => {
-        data.toggleZoom();
-    }).on('click', '.page-turn .bg, .page-turn .empty', () => {
-        data.close();
+        getControl(ev).navigate(parseInt($input.val(), 10));
+    }).on('click', '.page-turn .fullscreen', (ev: IJQueryEvent) => {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .bg, .page-turn .empty', (ev: IJQueryEvent) => {
+        getControl(ev).close();
     });
 });
 
