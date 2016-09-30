@@ -23,8 +23,8 @@ namespace FlipJs {
         public textureToLocalMatrix: Matrix2D;
 
 
-        private spinePointA: Vector2D;
-        private spinePointB: Vector2D;
+        public spinePointA: Vector2D;
+        public spinePointB: Vector2D;
 
         constructor($container: IJQueryNodes, cornerType: string) {
             this.$container = $container;

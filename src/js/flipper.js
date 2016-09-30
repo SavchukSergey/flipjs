@@ -465,8 +465,8 @@ $.fn.pageTurn = function () {
             screenWidth = $scaler.width();
             pageHeight = screenHeight;
             pageWidth = screenWidth / 2;
-            var $pageA = $pages.find('li.page-a');
-            var $pageB = $pages.find('li.page-b');
+            var $pageA = getPageA();
+            var $pageB = getPageB();
             switch (cornerType) {
                 case 'tr':
                 case 'br':
@@ -598,7 +598,7 @@ $.fn.pageTurn = function () {
             function dragEndFold(ev) {
                 var touchPointA = corner.getPoint();
                 if (touchPointA.x > pageWidth) {
-                    dragAnimate(new Vector2D(screenWidth, 0)).done(function () {
+                    dragAnimate(corner.spinePointA).done(function () {
                         shiftCurrent(corner.pagesDelta);
                     });
                 }
@@ -778,8 +778,8 @@ $.fn.pageTurn = function () {
         function setupFrontPage(localFold) {
             var shift = corner.textureToGlobal(new Vector2D(0, 0));
             var pageMatrix = new Matrix2D().translate(shift).multiply(corner.globalToLocalMatrix);
-            var spineA = new Vector2D(pageWidth, 0).mul(2); //Scale it by any number >1 to avoid zero axis length
-            var spineB = new Vector2D(pageWidth, pageHeight).mul(2); //Scale it by any number >1 to avoid zero axis length
+            var spineA = corner.spinePointA.mul(2); //Scale it by any number >1 to avoid zero axis length
+            var spineB = corner.spinePointB.mul(2); //Scale it by any number >1 to avoid zero axis length
             var clipperMatrix;
             if (localFold.foldA.x > localFold.foldB.x) {
                 clipperMatrix = getTrapezoidClipperMatrix(localFold.foldA, spineA, localFold.foldB, spineB);
@@ -802,22 +802,59 @@ $.fn.pageTurn = function () {
             $container.removeClass('active');
             $pages.find('li').css('transform', '').find('img').css('transform', '');
         }
+        function isOneSideLeftPage() {
+            return $container.hasClass('one-side-left');
+        }
+        function isOneSideRightPage() {
+            return $container.hasClass('one-side-right');
+        }
+        function getOneSidePage() {
+            if (isOneSideLeftPage()) {
+                return $pages.children('li.page-a');
+            }
+            else if (isOneSideRightPage()) {
+                return $pages.children('li.page-b');
+            }
+            else {
+                return $({});
+            }
+        }
+        function hasPageBefore($page) {
+            var $prev = $page.prev('li');
+            return isPage($prev);
+        }
+        function hasPageAfter($page) {
+            var $next = $page.next('li');
+            return isPage($next);
+        }
+        function getPageA() {
+            return $pages.children('li.page-a');
+        }
+        function getPageB() {
+            return $pages.children('li.page-b');
+        }
+        function isPage($page) {
+            if (!$page.length)
+                return false;
+            return !$page.hasClass('empty');
+        }
         function refreshState() {
-            var $pageA = $pages.children('li.page-a');
-            var $pageB = $pages.children('li.page-b');
-            var $prev = $pageA.prev('li');
-            var $next = $pageB.next('li');
-            $container.toggleClass('can-prev-2', !!$prev.length && !$prev.hasClass('empty'));
-            $container.toggleClass('can-next-2', !!$next.length && !$next.hasClass('empty'));
-            var twoSides = !!$pageA.length && !!$pageB.length && !$pageA.hasClass('empty') && !$pageB.hasClass('empty');
+            var $pageA = getPageA();
+            var $pageB = getPageB();
+            var $currentOne = getOneSidePage();
+            $container.toggleClass('can-prev-2', hasPageBefore($pageA));
+            $container.toggleClass('can-next-2', hasPageAfter($pageB));
+            $container.toggleClass('can-prev', hasPageBefore($currentOne));
+            $container.toggleClass('can-next', hasPageAfter($currentOne));
+            var twoSides = isPage($pageA) && isPage($pageB);
             $container.toggleClass('two-sides', twoSides);
             var pageNum = getPageNumber();
             $toolbarPage.val(pageNum.toString());
             preloadImages();
         }
         function getPageNumber() {
-            var $items = $pages.find('li:not(.empty)');
-            var oneSideLeft = $container.hasClass('one-side-left');
+            var $items = $pages.children('li:not(.empty)');
+            var oneSideLeft = isOneSideLeftPage();
             for (var n = 0; n < $items.length; n++) {
                 var $page = $($items[n]);
                 if ($page.hasClass('page-a')) {
