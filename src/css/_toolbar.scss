@@ -13,6 +13,19 @@
         a {
             font-size: $toolbar-font-size;
             margin: 0 0.25em;
+            text-decoration: none;
+        }
+
+        .fullscreen {
+            color: $arrow-color;
+            background-image: url($url-fullscreen);
+            background-size: 1em 1em;
+            display: inline-block;
+            width: 1em;
+            background-repeat: no-repeat; 
+            &:after {
+                content: '.';
+            }
         }
 
         input {
@@ -31,5 +44,11 @@
                 content: '\2B95';
             }
         }
+    }
+
+    &.zoom-in {
+        .fullscreen {
+             background-image: url($url-fullscreen-exit);
+       }
     }
 }

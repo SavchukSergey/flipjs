@@ -773,9 +773,11 @@ $(document).ready(function () {
         data.shiftCurrent(1);
     }).on('click', '.page-turn .go-prev', () => {
         data.shiftCurrent(-1);
-    }).on('change', '.page-turn .go-page', (ev) => {
+    }).on('change', '.page-turn .go-page', (ev: IJQueryEvent) => {
         var $input = $(ev.target).closest('input');
         data.navigate(parseInt($input.val(), 10));
+    }).on('click', '.page-turn .fullscreen', () => {
+        data.toggleZoom();
     }).on('click', '.page-turn .bg, .page-turn .empty', () => {
         data.close();
     });

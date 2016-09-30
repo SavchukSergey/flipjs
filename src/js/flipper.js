@@ -1049,6 +1049,8 @@ $(document).ready(function () {
     }).on('change', '.page-turn .go-page', function (ev) {
         var $input = $(ev.target).closest('input');
         data.navigate(parseInt($input.val(), 10));
+    }).on('click', '.page-turn .fullscreen', function () {
+        data.toggleZoom();
     }).on('click', '.page-turn .bg, .page-turn .empty', function () {
         data.close();
     });
