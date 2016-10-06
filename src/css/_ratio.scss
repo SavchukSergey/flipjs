@@ -40,5 +40,11 @@
     &.letter {
         @include ratio(8.5in, 11in);
     }
+    &.r4x3 {
+        @include ratio(3, 4);
+    }
+    &.r16x9 {
+        @include ratio(9, 16);
+    }
 
 }
