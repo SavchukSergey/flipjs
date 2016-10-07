@@ -36,15 +36,32 @@
 .page-turn {
     &.a4 {
         @include ratio(210mm, 297mm);
+    
+        &.landscape {
+            @include ratio(297mm, 210mm);
+        }
     }
     &.letter {
         @include ratio(8.5in, 11in);
+        
+        &.landscape {
+            @include ratio(11in, 8.5in);
+        }
     }
     &.r4x3 {
         @include ratio(3, 4);
+
+        &.landscape {
+            @include ratio(4, 3);
+        }
     }
     &.r16x9 {
         @include ratio(9, 16);
+
+        &.landscape {
+            @include ratio(16, 9);
+        }
     }
+
 
 }
