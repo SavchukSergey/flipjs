@@ -9,8 +9,8 @@ $desktop-scaler-ratio: 93%;
 $desktop-scaler-margin: 2%;
 $tablet-scaler-ratio: 94%;
 $tablet-scaler-margin: 1%;
-$media-tablet-or-smaller: 'screen and (max-width: 979px)';
-$media-desktop-or-greater: 'screen and (min-width: 980px)';
+$media-tablet-or-smaller: 'screen and (max-width: 991px)';
+$media-desktop-or-greater: 'screen and (min-width: 992px)';
 $fill: 0.95;
 
 $arrow-stroke-color: #666;
@@ -21,6 +21,7 @@ $spine-shadow-size: 4%;
 
 $preview-width: 10%;
 
-$toolbar-font-size: 1.5em;
+$desktop-toolbar-font-size: 1.5em;
+$mobile-toolbar-font-size: 3.5em;
 
 @import '_icons.scss';
