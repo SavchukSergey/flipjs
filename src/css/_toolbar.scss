@@ -47,6 +47,10 @@
             background-image: url($url-right-arrow);
         }
 
+        .close {
+            background-image: url($url-close);
+        }
+
         input {
             text-align: center;
             display: inline-block;
