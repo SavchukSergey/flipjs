@@ -9,6 +9,7 @@ $desktop-scaler-ratio: 93%;
 $desktop-scaler-margin: 2%;
 $tablet-scaler-ratio: 94%;
 $tablet-scaler-margin: 1%;
+$media-mobile-or-smaller: 'screen and (max-width: 600px)';
 $media-tablet-or-smaller: 'screen and (max-width: 991px)';
 $media-desktop-or-greater: 'screen and (min-width: 992px)';
 $fill: 0.95;
@@ -22,6 +23,7 @@ $spine-shadow-size: 4%;
 $preview-width: 10%;
 
 $desktop-toolbar-font-size: 1.5em;
-$mobile-toolbar-font-size: 3.5em;
+$tablet-toolbar-font-size: 2.5em;
+$mobile-toolbar-font-size: 1.75em;
 
 @import '_icons.scss';

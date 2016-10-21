@@ -3,22 +3,29 @@
 .page-turn {
     .page-turn-toolbar {
         position: fixed;
-        top: 2%;
+        top: 1%;
         right: 5%;
         background-color: rgba(0,0,0,0.54);
         border-radius: 0.5em;
         padding: 0.5em;
         z-index: 5001;
+        text-align: center;
+
+        @media #{$media-mobile-or-smaller} {
+            left: 0;
+            right: 0;
+        }
+
 
         a, input {
-            @media #{$media-tablet-or-smaller} {
-                font-size: $mobile-toolbar-font-size;
-            }
             @media #{$media-desktop-or-greater} {
                 font-size: $desktop-toolbar-font-size;
             }
-            @media screen and (max-width: 600px) {
-                font-size: 2.25em;
+            @media #{$media-tablet-or-smaller} {
+                font-size: $tablet-toolbar-font-size;
+            }
+            @media #{$media-mobile-or-smaller} {
+                font-size: $mobile-toolbar-font-size;
             }
         }
 
@@ -56,7 +63,7 @@
             display: inline-block;
             width: 5em;
             margin: 0;
-            padding: 0.25em;
+            padding: 0;
         }
 
     }

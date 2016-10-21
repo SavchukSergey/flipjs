@@ -8,8 +8,8 @@
 
 .page-turn {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 4%;
+    left: 8%;
     bottom: 0;
     right: 0;
     z-index: 100;
@@ -28,6 +28,8 @@
         .page-turn-hide-small {
             display: none !important;
         }
+        left: 0;
+        top: 9%;
     }
 
 }

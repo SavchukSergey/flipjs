@@ -1,6 +1,9 @@
 @import '_variables.scss';
 
 @mixin ratio($page-width, $page-height) {
+    $page-width: $page-width / 0.9; //leave space for preview
+    $page-height: $page-height / 0.95; //leave space for toolbar
+    
     $one-page-ratio: $page-width / $page-height;
     $one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
     $two-page-ratio: 2 * $page-width / $page-height;
