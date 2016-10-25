@@ -58,6 +58,14 @@
             background-image: url($url-close);
         }
 
+        .zoom-in {
+            background-image: url($zoom-in);
+        }
+
+        .zoom-out {
+            background-image: url($zoom-out);
+        }
+
         input {
             text-align: center;
             display: inline-block;

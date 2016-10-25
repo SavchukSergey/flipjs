@@ -389,7 +389,8 @@ $.fn.pageTurn = function () {
         var $backPage;
         var $backPageImg;
         var touchCorner = '';
-        var zoomK = 2;
+        var zoomValue = 1;
+        var zoomK = 1.5;
         var zoomShift = new Vector2D(0, 0);
         var animationSemaphore = false;
         var screenHeight = $scaler.height();
@@ -1001,24 +1002,31 @@ $.fn.pageTurn = function () {
         function zoom() {
             return $container.hasClass('zoom-in');
         }
+        function setZoom() {
+            zoomShift = new Vector2D(0, 0);
+            var m = new Matrix2D().scale(zoomValue, zoomValue);
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
         function zoomIn() {
             $container.addClass('zoom-in');
-            zoomShift = new Vector2D(0, 0);
-            var m = new Matrix2D().scale(zoomK, zoomK);
-            $zoomNode.css('transform', m.getTransformExpression());
+            zoomValue *= zoomK;
+            setZoom();
         }
         function zoomOut() {
             $container.removeClass('zoom-in');
-            var m = new Matrix2D();
-            $zoomNode.css('transform', m.getTransformExpression());
+            zoomValue /= zoomK;
+            setZoom();
         }
         function toggleZoom() {
             if (zoom()) {
-                zoomOut();
+                $container.removeClass('zoom-in');
+                zoomValue = 1;
             }
             else {
-                zoomIn();
+                $container.addClass('zoom-in');
+                zoomValue = 2;
             }
+            setZoom();
         }
         refreshState();
         buildPreview();
@@ -1054,6 +1062,10 @@ $(document).ready(function () {
         getControl(ev).shiftCurrent(1);
     }).on('click', '.page-turn .go-prev', function (ev) {
         getControl(ev).shiftCurrent(-1);
+    }).on('click', '.page-turn .zoom-in', function (ev) {
+        getControl(ev).zoomIn();
+    }).on('click', '.page-turn .zoom-out', function (ev) {
+        getControl(ev).zoomOut();
     }).on('change', '.page-turn .go-page', function (ev) {
         var $input = $(ev.target).closest('input');
         getControl(ev).navigate(parseInt($input.val(), 10));

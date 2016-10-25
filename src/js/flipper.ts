@@ -18,7 +18,7 @@ $.fn.pageTurn = function () {
         var $pages = $container.find('.pages');
         var $zoomNode = $container.find('.page-turn-magnifier');
         var $toolbarPage = $container.find('.page-turn-toolbar input');
-        
+
         var corner: FlipJs.Corner;
 
         /** Front side of page being folded */
@@ -31,7 +31,8 @@ $.fn.pageTurn = function () {
 
         var touchCorner = '';
 
-        var zoomK = 2;
+        var zoomValue = 1;
+        var zoomK = 1.5;
         var zoomShift = new Vector2D(0, 0);
 
         var animationSemaphore = false;
@@ -717,25 +718,33 @@ $.fn.pageTurn = function () {
             return $container.hasClass('zoom-in');
         }
 
+        function setZoom() {
+            zoomShift = new Vector2D(0, 0);
+            var m = new Matrix2D().scale(zoomValue, zoomValue);
+            $zoomNode.css('transform', m.getTransformExpression());
+        }
+
         function zoomIn() {
             $container.addClass('zoom-in');
-            zoomShift = new Vector2D(0, 0);
-            var m = new Matrix2D().scale(zoomK, zoomK);
-            $zoomNode.css('transform', m.getTransformExpression());
+            zoomValue *= zoomK;
+            setZoom();
         }
 
         function zoomOut() {
             $container.removeClass('zoom-in');
-            var m = new Matrix2D();
-            $zoomNode.css('transform', m.getTransformExpression());
+            zoomValue /= zoomK;
+            setZoom();
         }
 
         function toggleZoom() {
             if (zoom()) {
-                zoomOut();
+                $container.removeClass('zoom-in');
+                zoomValue = 1;
             } else {
-                zoomIn();
+                $container.addClass('zoom-in');
+                zoomValue = 2;
             }
+            setZoom();
         }
 
         refreshState();
@@ -776,6 +785,10 @@ $(document).ready(function () {
         getControl(ev).shiftCurrent(1);
     }).on('click', '.page-turn .go-prev', (ev: IJQueryEvent) => {
         getControl(ev).shiftCurrent(-1);
+    }).on('click', '.page-turn .zoom-in', (ev: IJQueryEvent) => {
+        getControl(ev).zoomIn();
+    }).on('click', '.page-turn .zoom-out', (ev: IJQueryEvent) => {
+        getControl(ev).zoomOut();
     }).on('change', '.page-turn .go-page', (ev: IJQueryEvent) => {
         var $input = $(ev.target).closest('input');
         getControl(ev).navigate(parseInt($input.val(), 10));
