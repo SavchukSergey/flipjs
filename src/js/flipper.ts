@@ -798,6 +798,7 @@ $(document).ready(function () {
     }).on('click', '.page-turn .bg, .page-turn .empty', (ev: IJQueryEvent) => {
         getControl(ev).close();
     }).on('touchstart', '.page-turn', (ev: IJQueryEvent) => {
+            return;
         if (ev.type.indexOf('touch') >= 0) {
             var touchEvent = <TouchEvent>ev.originalEvent
             if (touchEvent.touches.length > 1) {

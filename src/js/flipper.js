@@ -1074,6 +1074,7 @@ $(document).ready(function () {
     }).on('click', '.page-turn .bg, .page-turn .empty', function (ev) {
         getControl(ev).close();
     }).on('touchstart', '.page-turn', function (ev) {
+        return;
         if (ev.type.indexOf('touch') >= 0) {
             var touchEvent = ev.originalEvent;
             if (touchEvent.touches.length > 1) {
