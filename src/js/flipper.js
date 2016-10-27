@@ -639,60 +639,64 @@ $.fn.pageTurn = function () {
                 }
                 return true;
             }
-            // $('html, body').on('mousedown touchstart', '.page-turn .corner', (ev: IJQueryEvent) => {
-            //     var $evtarget = $(ev.target);
-            //     if (state === 'init') {
-            //         mouseDownStart = getMousePosition(ev);
-            //         ev.preventDefault();
-            //         ev.stopPropagation();
-            //         state = 'threshold';
-            //         $handle = $evtarget.closest('.corner');
-            //     }
-            // }).on('mousemove touchmove', '.page-turn .corner', (ev: IJQueryEvent) => {
-            //     if (dragging || zoom()) return;
-            //     draggingPreview = {};
-            //     mouseDownStart = new Vector2D(-100, -100);
-            //     $handle = $(ev.target).closest('.corner');
-            //     var args = createDragArgs(ev);
-            //     var corner = getCornerType(args.$handle);
-            //     initCorner(corner);
-            //     dragMoveFold(args);
-            // }).on('mouseout touchend', '.page-turn .corner', (ev: IJQueryEvent) => {
-            //     if (!draggingPreview) return;
-            //     draggingPreview = null;
-            //     dragAnimate(new Vector2D(0, 0));
-            // }).on('mousedown touchstart', '.page-turn.zoom-in .page-turn-magnifier', (ev: IJQueryEvent) => {
-            //     var $evtarget = $(ev.target);
-            //     if (state === 'init') {
-            //         mouseDownStart = getMousePosition(ev);
-            //         ev.preventDefault();
-            //         ev.stopPropagation();
-            //         state = 'threshold';
-            //         $handle = $evtarget.closest('.page-turn');
-            //     }
-            // }).bind('mousemove touchmove', (ev: IJQueryEvent) => {
-            //     return dragCheck(ev, true);
-            // }).bind('mousewheel', function (ev: IJQueryEvent) {
-            //     return dragCheck(ev, false);
-            // }).bind('mouseup touchend', (ev: IJQueryEvent) => {
-            //     if (state === 'drag') {
-            //         ev.preventDefault();
-            //         ev.stopPropagation();
-            //         dragEnd(ev);
-            //     } else if (state === 'threshold') {
-            //         $handle = $(ev.target).closest('.corner');
-            //         if ($handle.length) {
-            //             animateArrow(getCornerType($handle));
-            //         }
-            //     }
-            //     state = 'init';
-            // }).bind('click', '.page-turn .corner', (ev: IJQueryEvent) => {
-            // }).bind('keydown', (ev: IJQueryEvent) => {
-            //     if (!dragging) return;
-            //     if (ev.keyCode === 27) {      //escape
-            //         dragCancel(ev);
-            //     }
-            // });
+            $('html, body').on('mousedown touchstart', '.page-turn .corner', function (ev) {
+                var $evtarget = $(ev.target);
+                if (state === 'init') {
+                    mouseDownStart = getMousePosition(ev);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    state = 'threshold';
+                    $handle = $evtarget.closest('.corner');
+                }
+            }).on('mousemove touchmove', '.page-turn .corner', function (ev) {
+                if (dragging || zoom())
+                    return;
+                draggingPreview = {};
+                mouseDownStart = new Vector2D(-100, -100);
+                $handle = $(ev.target).closest('.corner');
+                var args = createDragArgs(ev);
+                var corner = getCornerType(args.$handle);
+                initCorner(corner);
+                dragMoveFold(args);
+            }).on('mouseout touchend', '.page-turn .corner', function (ev) {
+                if (!draggingPreview)
+                    return;
+                draggingPreview = null;
+                dragAnimate(new Vector2D(0, 0));
+            }).on('mousedown touchstart', '.page-turn.zoom-in .page-turn-magnifier', function (ev) {
+                var $evtarget = $(ev.target);
+                if (state === 'init') {
+                    mouseDownStart = getMousePosition(ev);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    state = 'threshold';
+                    $handle = $evtarget.closest('.page-turn');
+                }
+            }).bind('mousemove touchmove', function (ev) {
+                return dragCheck(ev, true);
+            }).bind('mousewheel', function (ev) {
+                return dragCheck(ev, false);
+            }).bind('mouseup touchend', function (ev) {
+                if (state === 'drag') {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    dragEnd(ev);
+                }
+                else if (state === 'threshold') {
+                    $handle = $(ev.target).closest('.corner');
+                    if ($handle.length) {
+                        animateArrow(getCornerType($handle));
+                    }
+                }
+                state = 'init';
+            }).bind('click', '.page-turn .corner', function (ev) {
+            }).bind('keydown', function (ev) {
+                if (!dragging)
+                    return;
+                if (ev.keyCode === 27) {
+                    dragCancel(ev);
+                }
+            });
         })();
         /**
          * Get touch point vector during auto-animation. Fold point x and Fold angle is animated.
@@ -1048,35 +1052,35 @@ $(document).ready(function () {
     function getControl(ev) {
         return $(ev.target).closest('.page-turn').pageTurn();
     }
-    // $('body').on('dblclick', '.page-turn .page-turn-magnifier', (ev: IJQueryEvent) => {
-    //     getControl(ev).toggleZoom();
-    // }).on('click', '.page-turn .go-next-2', (ev: IJQueryEvent) => {
-    //     getControl(ev).animateFlipForward();
-    // }).on('click', '.page-turn .go-prev-2', (ev: IJQueryEvent) => {
-    //     getControl(ev).animateFlipBackward();
-    // }).on('click', '.page-turn .go-next', (ev: IJQueryEvent) => {
-    //     getControl(ev).shiftCurrent(1);
-    // }).on('click', '.page-turn .go-prev', (ev: IJQueryEvent) => {
-    //     getControl(ev).shiftCurrent(-1);
-    // }).on('click', '.page-turn .zoom-in', (ev: IJQueryEvent) => {
-    //     getControl(ev).zoomIn();
-    // }).on('click', '.page-turn .zoom-out', (ev: IJQueryEvent) => {
-    //     getControl(ev).zoomOut();
-    // }).on('change', '.page-turn .go-page', (ev: IJQueryEvent) => {
-    //     var $input = $(ev.target).closest('input');
-    //     getControl(ev).navigate(parseInt($input.val(), 10));
-    // }).on('click', '.page-turn .fullscreen', (ev: IJQueryEvent) => {
-    //     getControl(ev).toggleZoom();
-    // }).on('click', '.page-turn .bg, .page-turn .empty', (ev: IJQueryEvent) => {
-    //     getControl(ev).close();
-    // }).on('touchstart', '.page-turn', (ev: IJQueryEvent) => {
-    //     // if (ev.type.indexOf('touch') >= 0) {
-    //     //     var touchEvent = <TouchEvent>ev.originalEvent
-    //     //     if (touchEvent.touches.length > 1) {
-    //     //         ev.preventDefault();
-    //     //     }
-    //     // }
-    // });
+    $('body').on('dblclick', '.page-turn .page-turn-magnifier', function (ev) {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .go-next-2', function (ev) {
+        getControl(ev).animateFlipForward();
+    }).on('click', '.page-turn .go-prev-2', function (ev) {
+        getControl(ev).animateFlipBackward();
+    }).on('click', '.page-turn .go-next', function (ev) {
+        getControl(ev).shiftCurrent(1);
+    }).on('click', '.page-turn .go-prev', function (ev) {
+        getControl(ev).shiftCurrent(-1);
+    }).on('click', '.page-turn .zoom-in', function (ev) {
+        getControl(ev).zoomIn();
+    }).on('click', '.page-turn .zoom-out', function (ev) {
+        getControl(ev).zoomOut();
+    }).on('change', '.page-turn .go-page', function (ev) {
+        var $input = $(ev.target).closest('input');
+        getControl(ev).navigate(parseInt($input.val(), 10));
+    }).on('click', '.page-turn .fullscreen', function (ev) {
+        getControl(ev).toggleZoom();
+    }).on('click', '.page-turn .bg, .page-turn .empty', function (ev) {
+        getControl(ev).close();
+    }).on('touchstart', '.page-turn', function (ev) {
+        // if (ev.type.indexOf('touch') >= 0) {
+        //     var touchEvent = <TouchEvent>ev.originalEvent
+        //     if (touchEvent.touches.length > 1) {
+        //         ev.preventDefault();
+        //     }
+        // }
+    });
 });
 
 //# sourceMappingURL=flipper.js.map

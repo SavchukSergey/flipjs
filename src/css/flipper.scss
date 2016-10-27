@@ -7,9 +7,9 @@
 @import '_debug.scss';
 
 .page-turn {
-    position: fixed;
-    top: 4%;
-    left: 8%;
+    position: absolute;
+    top: 4vh;
+    left: 8vw;
     bottom: 0;
     right: 0;
     z-index: 100;
