@@ -643,8 +643,6 @@ $.fn.pageTurn = function () {
                 var $evtarget = $(ev.target);
                 if (state === 'init') {
                     mouseDownStart = getMousePosition(ev);
-                    ev.preventDefault();
-                    ev.stopPropagation();
                     state = 'threshold';
                     $handle = $evtarget.closest('.corner');
                 }
