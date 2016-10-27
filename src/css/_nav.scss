@@ -8,6 +8,22 @@
         }
     }
 
+    &.first {
+        a.nav {
+            &.nav-prev, &.nav-prev-2 {
+                display: none !important;
+            }
+        }
+    }
+
+    &.last {
+        a.nav {
+            &.nav-next, &.nav-next-2 {
+                display: none !important;
+            }
+        }
+    }
+
     a.nav {
         position: absolute;
         display: block;

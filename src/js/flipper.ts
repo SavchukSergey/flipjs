@@ -230,7 +230,7 @@ $.fn.pageTurn = function () {
             }
 
             function dragMoveZoom(args: IDragArgs) {
-                var m = new Matrix2D().scale(zoomK, zoomK).translate(zoomShift).translate(args.vector);
+                var m = new Matrix2D().scale(zoomValue, zoomValue).translate(zoomShift).translate(args.vector);
                 $zoomNode.css('transform', m.getTransformExpression());
             }
 
@@ -691,7 +691,8 @@ $.fn.pageTurn = function () {
 
         function navigate(pageNumber: number) {
             var $items = $pages.children('li');
-            pageNumber = Math.min(Math.max(1, pageNumber), getMaxPage());
+            var maxPage = getMaxPage();
+            pageNumber = Math.min(Math.max(1, pageNumber), maxPage);
             var page = 0;
             for (var i = 0; i < $items.length; i++) {
                 var $page = $($items[i]);
@@ -708,6 +709,9 @@ $.fn.pageTurn = function () {
             $container.toggleClass('one-side-right', !left);
             refreshState();
             $container.trigger('page-change', [getPageNumber()]);
+
+            $container.toggleClass('first', pageNumber == 1);
+            $container.toggleClass('last', pageNumber >= maxPage);
         }
 
         function close() {
@@ -722,26 +726,23 @@ $.fn.pageTurn = function () {
             zoomShift = new Vector2D(0, 0);
             var m = new Matrix2D().scale(zoomValue, zoomValue);
             $zoomNode.css('transform', m.getTransformExpression());
+            $container.toggleClass('zoom-in', zoomValue > 1);
         }
 
         function zoomIn() {
-            $container.addClass('zoom-in');
             zoomValue *= zoomK;
             setZoom();
         }
 
         function zoomOut() {
-            $container.removeClass('zoom-in');
             zoomValue /= zoomK;
             setZoom();
         }
 
         function toggleZoom() {
             if (zoom()) {
-                $container.removeClass('zoom-in');
                 zoomValue = 1;
             } else {
-                $container.addClass('zoom-in');
                 zoomValue = 2;
             }
             setZoom();
@@ -796,6 +797,13 @@ $(document).ready(function () {
         getControl(ev).toggleZoom();
     }).on('click', '.page-turn .bg, .page-turn .empty', (ev: IJQueryEvent) => {
         getControl(ev).close();
+    }).on('touchstart', '.page-turn', (ev: IJQueryEvent) => {
+        if (ev.type.indexOf('touch') >= 0) {
+            var touchEvent = <TouchEvent>ev.originalEvent
+            if (touchEvent.touches.length > 1) {
+                ev.preventDefault();
+            }
+        }
     });
 });
 
