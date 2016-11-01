@@ -7,9 +7,12 @@
 @import '_debug.scss';
 
 .page-turn {
-    position: absolute;
-    top: 4vh;
-    left: 8vw;
+    // position: absolute;
+    // top: 4vh;
+    // left: 8vw;
+    position: fixed;
+    top: 4%;
+    left: 8%;
     bottom: 0;
     right: 0;
     z-index: 100;
@@ -230,7 +233,7 @@
         }
     }
     
-    .corner {
+    @mixin corners($corner-size) {
         display: none;
         position: absolute;
         width: $corner-size / 2;
@@ -271,6 +274,14 @@
         &.corner-br, &.corner-bl {
             margin-top: -$corner-size / 2;
         }
+    }
+    .corner {
+        @media #{$media-desktop-or-greater} {
+            @include corners($desktop-corner-size);
+        } 
+        @media screen and (max-width: 991px) {
+            @include corners($tablet-corner-size);
+        } 
     }
 
 }

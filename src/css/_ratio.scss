@@ -23,14 +23,28 @@
 
 
     @media #{$media-tablet-or-smaller} { 
-        @media (max-aspect-ratio: $one-page-ratio-string) {
-            width: $fill * 100vw;
-            height: $fill * 100vw / $one-page-ratio;
+        &:not(.tablet-two-pages) {
+            @media (max-aspect-ratio: $one-page-ratio-string) {
+                width: $fill * 100vw;
+                height: $fill * 100vw / $one-page-ratio;
+            }
+
+            @media (min-aspect-ratio: $one-page-ratio-string) { 
+                width: $fill * 100vh * $one-page-ratio;
+                height: $fill * 100vh;
+            }
         }
 
-        @media (min-aspect-ratio: $one-page-ratio-string) { 
-            width: $fill * 100vh * $one-page-ratio;
-            height: $fill * 100vh;
+        &.tablet-two-pages {
+            @media (max-aspect-ratio: $two-page-ratio-string) { 
+                width: $fill * 100vw;
+                height: $fill * 100vw / $two-page-ratio;
+            }
+
+            @media (min-aspect-ratio: $two-page-ratio-string) { 
+                width: $fill * 100vh * $two-page-ratio;
+                height: $fill * 100vh;
+            }
         }
     }
 
