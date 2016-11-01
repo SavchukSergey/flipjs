@@ -159,6 +159,7 @@
 
     &.active li, &.active li img {
         transform-origin: top left;
+        -webkit-transform-origin: top left;
     }
 
     &.active-next .page3, &.active-prev .page2 {
@@ -214,7 +215,8 @@
 
 
 .page-turn {
-    @media #{$media-desktop-or-greater} {
+
+    @mixin enableCorners {
         &.can-prev-2 {
             .corner-tl, .corner-bl {
                 display: block;
@@ -226,6 +228,17 @@
             }
         }
     }
+
+    @media #{$media-desktop-or-greater} {
+        @include enableCorners();
+    }
+
+    @media #{$media-tablet-or-smaller} {
+        &.tablet-two-pages {
+            @include enableCorners();
+        }
+    }
+
 
     &.animating {
         .corner {

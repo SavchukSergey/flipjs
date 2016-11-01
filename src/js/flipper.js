@@ -83,6 +83,26 @@ var Matrix2D = (function () {
     Matrix2D.prototype.getTransformExpression = function () {
         var self = this;
         var m = self.m;
+        var dx = m[6];
+        var dy = m[7];
+        var kxx = m[0];
+        var kxy = m[1];
+        var kyx = m[3];
+        var kyy = m[4];
+        var kx = Math.sqrt(kxx * kxx + kyx * kyx);
+        var ky = Math.sqrt(kxy * kxy + kyy * kyy);
+        kxx /= kx;
+        kyx /= kx;
+        dx /= kx;
+        kxy /= ky;
+        kyy /= ky;
+        dy /= ky;
+        // return `translate(${self.roundFloat(dx)}px ${self.roundFloat(dy)}px) matrix(${self.roundFloat(m[0])}, ${self.roundFloat(m[1])}, ${self.roundFloat(m[3])}, ${self.roundFloat(m[4])}, 0, 0) `;
+        return " translate(" + dx + "px, " + dy + "px)  scale(" + kx + ", " + ky + ") matrix(" + self.roundFloat(kxx) + ", " + self.roundFloat(kxy) + ", " + self.roundFloat(kyx) + ", " + self.roundFloat(kyy) + ", 0, 0)";
+    };
+    Matrix2D.prototype.getTransformMatrixExpression = function () {
+        var self = this;
+        var m = self.m;
         return "matrix(" + self.roundFloat(m[0]) + ", " + self.roundFloat(m[1]) + ", " + self.roundFloat(m[3]) + ", " + self.roundFloat(m[4]) + ", " + self.roundFloat(m[6]) + ", " + self.roundFloat(m[7]) + ")";
     };
     return Matrix2D;
