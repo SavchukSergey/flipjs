@@ -61,6 +61,10 @@ class Matrix2D {
         return this.multiplyArray([kx, 0, 0, 0, ky, 0, 0, 0, 1]);
     }
 
+    public skew(skewX: number, skewY: number): Matrix2D {
+        return this.multiplyArray([1, Math.tan(skewY * Math.PI / 180), 0, Math.tan(skewX * Math.PI / 180), 1, 0, 0, 0, 1]);
+    }
+
     public rotate(deg: number): Matrix2D {
         var angle = deg * Math.PI / 180;
         var ca = Math.cos(angle);
@@ -109,24 +113,58 @@ class Matrix2D {
 
     public getTransformExpression() {
         var self = this;
-        var m = self.m;
-        var dx = m[6];
-        var dy = m[7];
+
+        var m: Matrix2D = self;
+        var translate = m.getTranslate();
+        m = m.translate(new Vector2D(-translate.x, -translate.y));
+        var scale = m.getScale();
+        m = m.scale(1 / scale.x, 1 / scale.y);
+        var skew = m.getSkew();
+        m = new Matrix2D().skew(skew.x, skew.y).reverse().multiply(m);
+        return `${translate.toString()} ${scale.toString()} ${skew.toString()}`;
+    }
+
+    public getSkew() {
+        var m = this.m;
         var kxx = m[0];
         var kxy = m[1];
         var kyx = m[3];
         var kyy = m[4];
-        var kx = Math.sqrt(kxx * kxx + kyx * kyx);
-        var ky = Math.sqrt(kxy * kxy + kyy * kyy);
-        kxx /= kx;
-        kyx /= kx;
-        dx /= kx;
-        kxy /= ky;
-        kyy /= ky;
-        dy /= ky;
-        // return `translate(${self.roundFloat(dx)}px ${self.roundFloat(dy)}px) matrix(${self.roundFloat(m[0])}, ${self.roundFloat(m[1])}, ${self.roundFloat(m[3])}, ${self.roundFloat(m[4])}, 0, 0) `;
-        return `matrix(${self.roundFloat(m[0])}, ${self.roundFloat(m[1])}, ${self.roundFloat(m[3])}, ${self.roundFloat(m[4])}, ${self.roundFloat(m[6])}, ${self.roundFloat(m[7])})`;
-        // return ` scale(${kx}, ${ky}) matrix(${self.roundFloat(kxx)}, ${self.roundFloat(kxy)}, ${self.roundFloat(kyx)}, ${self.roundFloat(kyy)}, ${dx}, ${dy})`;
+        var x = this.roundFloat(180 * Math.atan2(kyx, kxx) / Math.PI);
+        var y = this.roundFloat(180 * Math.atan2(kxy, kyy) / Math.PI);
+        return {
+            x: x,
+            y: y,
+            toString: () => `skew(${x}deg, ${y}deg)`
+        }
+    }
+
+    public getScale() {
+        var m = this.m;
+        var kxx = m[0];
+        var kyy = m[4];
+
+        var x = this.roundFloat(kxx);
+        var y = this.roundFloat(kyy);
+        return {
+            x: x,
+            y: y,
+            toString: () => `scale(${x}, ${y})`
+        }
+    }
+
+    public getTranslate() {
+        var m = this.m;
+        var dx = this.roundFloat(m[6]);
+        var dy = this.roundFloat(m[7]);
+
+        return {
+            x: dx,
+            y: dy,
+            toString: () => {
+                return `translate(${dx}px, ${dy}px)`;
+            }
+        }
     }
 
     public getTransformMatrixExpression() {
