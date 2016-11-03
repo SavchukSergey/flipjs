@@ -18,15 +18,28 @@
 
 
         a, input {
-            @media #{$media-desktop-or-greater} {
-                font-size: $desktop-toolbar-font-size;
+            @mixin toolbar-settings($pixel-ratio) {
+                @media #{$media-desktop-or-greater} {
+                    font-size: $desktop-toolbar-font-size * $pixel-ratio;
+                }
+                @media #{$media-tablet-or-smaller} {
+                    font-size: $tablet-toolbar-font-size * $pixel-ratio;
+                }
+                @media #{$media-mobile-or-smaller} {
+                    font-size: $mobile-toolbar-font-size * $pixel-ratio;
+                }
             }
-            @media #{$media-tablet-or-smaller} {
-                font-size: $tablet-toolbar-font-size;
+            
+            @include toolbar-settings(1);
+
+            @media (-webkit-min-device-pixel-ratio: 2) and (orientation: landscape) { 
+                @include toolbar-settings(1.5);
             }
-            @media #{$media-mobile-or-smaller} {
-                font-size: $mobile-toolbar-font-size;
+
+            @media (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) { 
+                @include toolbar-settings(2);
             }
+
         }
 
         a {
