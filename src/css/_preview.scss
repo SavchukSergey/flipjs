@@ -12,10 +12,6 @@
         padding: 10px 5px;
         display: none;
 
-        @media #{$media-desktop-or-greater} {
-            display: block;
-        }
-
         ol {
             width: 100%;
             height: 100%;
@@ -37,6 +33,22 @@
     &.zoom-in {
         div.preview {
             display: none;
+        }
+    }
+
+    &.desktop-show-previews {
+        @media #{$media-desktop-or-greater} {
+            div.preview {
+                display: block;
+            }
+        }
+    }
+
+    &.tablet-show-previews {
+        @media #{$media-tablet-or-smaller} {
+            div.preview {
+                display: block;
+            }
         }
     }
 

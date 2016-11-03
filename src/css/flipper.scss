@@ -12,7 +12,7 @@
     // left: 8vw;
     position: fixed;
     top: 5%;
-    left: 8%;
+    left: 0%;
     bottom: 0;
     right: 0;
     z-index: 100;
@@ -26,18 +26,20 @@
         .page-turn-hide-large {
             display: none !important;
         }
+        &.desktop-show-previews {
+            left: 8%;
+        }
     }
     @media #{$media-tablet-or-smaller} {
         .page-turn-hide-small {
             display: none !important;
         }
-        left: 0;
+        &.tablet-show-previews {
+            left: 8%;
+        }
         top: 9%;
     }
-    @media #{$media-tablet-or-smaller} {
-        left: 0;
-        top: 10%;
-    }
+
 
 }
 
