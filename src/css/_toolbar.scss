@@ -7,13 +7,13 @@
         right: 5%;
         background-color: rgba(0,0,0,0.54);
         border-radius: 0.5em;
-        padding: 0.5em;
+        padding: 0 0.5em;
         z-index: 5001;
         text-align: center;
 
         @media #{$media-mobile-or-smaller} {
-            left: 0;
-            right: 0;
+            left: 1em;
+            right: 1em;
         }
 
 
@@ -30,13 +30,14 @@
         }
 
         a {
-            margin: 0 0.25em;
+            padding: 0.25em;
             text-decoration: none;
             background-repeat: no-repeat; 
             display: inline-block;
             width: 1em;
             background-size: 1em 1em;
             color: $arrow-color;
+            background-position: 0.25em 0.34em;
             &:after {
                 content: '\00a0';
             }

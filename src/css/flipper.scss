@@ -34,6 +34,10 @@
         left: 0;
         top: 9%;
     }
+    @media #{$media-tablet-or-smaller} {
+        left: 0;
+        top: 10%;
+    }
 
 }
 
@@ -221,88 +225,5 @@
     }
 }
 
+@import "corners.scss";
 
-.page-turn {
-
-    @mixin enableCorners {
-        &.can-prev-2 {
-            .corner-tl, .corner-bl {
-                display: block;
-            }
-        }
-        &.can-next-2 {
-            .corner-tr, .corner-br {
-                display: block;
-            }
-        }
-    }
-
-    @media #{$media-desktop-or-greater} {
-        @include enableCorners();
-    }
-
-    @media #{$media-tablet-or-smaller} {
-        &.tablet-two-pages {
-            @include enableCorners();
-        }
-    }
-
-
-    &.animating {
-        .corner {
-            display: none !important;
-        }
-    }
-    
-    @mixin corners($corner-size) {
-        display: none;
-        position: absolute;
-        width: $corner-size / 2;
-        height: $corner-size / 2;
-        background-color:  transparent;
-        border-radius: 0;
-        z-index: 5000;
-        box-sizing: border-box;
-
-        &.corner-br {
-            top: 100%;
-            left: 100%;
-            border-top-left-radius: $corner-size / 2;
-        }
-
-        &.corner-bl {
-            top: 100%;
-            left: 0%;
-            border-top-right-radius: $corner-size / 2;
-        }
-
-        &.corner-tr {
-            top: 0%;
-            left: 100%;
-            border-bottom-left-radius: $corner-size / 2;
-        }
-
-        &.corner-tl {
-            top: 0%;
-            left: 0%;
-            border-bottom-right-radius: $corner-size / 2;
-        }
-
-        &.corner-tr, &.corner-br {
-            margin-left: -$corner-size / 2;
-        }
-
-        &.corner-br, &.corner-bl {
-            margin-top: -$corner-size / 2;
-        }
-    }
-    .corner {
-        @media #{$media-desktop-or-greater} {
-            @include corners($desktop-corner-size);
-        } 
-        @media screen and (max-width: 991px) {
-            @include corners($tablet-corner-size);
-        } 
-    }
-
-}

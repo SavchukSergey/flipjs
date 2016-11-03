@@ -1,84 +1,60 @@
 @import '_variables.scss';
 
+@mixin ratio-scale($two-page-ratio) {
+    $two-page-ratio-string: (round($two-page-ratio * 1000)) #{'/'} 1000;
+    @media (max-aspect-ratio: $two-page-ratio-string) { 
+        width: $fill * 100vw;
+        height: $fill * 100vw / $two-page-ratio;
+    }
+
+    @media (min-aspect-ratio: $two-page-ratio-string) { 
+        width: $fill * 100vh * $two-page-ratio;
+        height: $fill * 100vh;
+    }
+}
+
 @mixin ratio($page-width, $page-height) {
     $page-width: $page-width / 0.9; //leave space for preview
     $page-height: $page-height / 0.95; //leave space for toolbar
     
     $one-page-ratio: $page-width / $page-height;
-    $one-page-ratio-string: (round($one-page-ratio * 1000)) #{'/'} 1000;
     $two-page-ratio: 2 * $page-width / $page-height;
-    $two-page-ratio-string: (round($two-page-ratio * 1000)) #{'/'} 1000;
 
     @media #{$media-desktop-or-greater} {
-        @media (max-aspect-ratio: $two-page-ratio-string) { 
-            width: $fill * 100vw;
-            height: $fill * 100vw / $two-page-ratio;
-        }
-
-        @media (min-aspect-ratio: $two-page-ratio-string) { 
-            width: $fill * 100vh * $two-page-ratio;
-            height: $fill * 100vh;
-        }
+        @include ratio-scale($two-page-ratio);
     } 
 
 
     @media #{$media-tablet-or-smaller} { 
         &:not(.tablet-two-pages) {
-            @media (max-aspect-ratio: $one-page-ratio-string) {
-                width: $fill * 100vw;
-                height: $fill * 100vw / $one-page-ratio;
-            }
-
-            @media (min-aspect-ratio: $one-page-ratio-string) { 
-                width: $fill * 100vh * $one-page-ratio;
-                height: $fill * 100vh;
-            }
+            @include ratio-scale($one-page-ratio);
         }
 
         &.tablet-two-pages {
-            @media (max-aspect-ratio: $two-page-ratio-string) { 
-                width: $fill * 100vw;
-                height: $fill * 100vw / $two-page-ratio;
-            }
-
-            @media (min-aspect-ratio: $two-page-ratio-string) { 
-                width: $fill * 100vh * $two-page-ratio;
-                height: $fill * 100vh;
-            }
+            @include ratio-scale($two-page-ratio);
         }
     }
+}
 
+@mixin ratios($sideA, $sideB) {
+    @include ratio($sideA, $sideB);
+
+    &.landscape {
+        @include ratio($sideB, $sideA);
+    }
 }
 
 .page-turn {
     &.a4 {
-        @include ratio(210mm, 297mm);
-    
-        &.landscape {
-            @include ratio(297mm, 210mm);
-        }
+        @include ratios(210mm, 297mm);
     }
     &.letter {
-        @include ratio(8.5in, 11in);
-        
-        &.landscape {
-            @include ratio(11in, 8.5in);
-        }
+        @include ratios(8.5in, 11in);
     }
     &.r4x3 {
-        @include ratio(3, 4);
-
-        &.landscape {
-            @include ratio(4, 3);
-        }
+        @include ratios(3, 4);
     }
     &.r16x9 {
-        @include ratio(9, 16);
-
-        &.landscape {
-            @include ratio(16, 9);
-        }
+        @include ratios(9, 16);
     }
-
-
 }
