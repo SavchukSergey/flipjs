@@ -135,7 +135,10 @@ class Matrix2D {
         return {
             x: x,
             y: y,
-            toString: () => `skew(${x}deg, ${y}deg)`
+            toString: () => {
+                if (x || y) return `skew(${x}deg, ${y}deg)`;
+                return '';
+            }
         }
     }
 
@@ -149,7 +152,12 @@ class Matrix2D {
         return {
             x: x,
             y: y,
-            toString: () => `scale(${x}, ${y})`
+            toString: () => {
+                if (x != 1 && y != 1) return `scale(${x}, ${y})`;
+                if (x != 1) return `scaleX(${x})`;
+                if (y != 1) return `scaleY(${y})`;
+                return '';
+            }
         }
     }
 
@@ -162,7 +170,10 @@ class Matrix2D {
             x: dx,
             y: dy,
             toString: () => {
-                return `translate(${dx}px, ${dy}px)`;
+                if (dx || dy) {
+                    return `translate(${dx}px, ${dy}px)`;
+                }
+                return '';
             }
         }
     }

@@ -16,7 +16,9 @@
     }
 
     @media #{$media-desktop-or-greater} {
-        @include enableCorners();
+        &.desktop-two-pages {
+            @include enableCorners();
+        }
     }
 
     @media #{$media-tablet-or-smaller} {

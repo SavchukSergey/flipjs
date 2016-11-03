@@ -1,14 +1,14 @@
 @import '_variables.scss';
 
-@mixin ratio-scale($two-page-ratio) {
-    $two-page-ratio-string: (round($two-page-ratio * 1000)) #{'/'} 1000;
-    @media (max-aspect-ratio: $two-page-ratio-string) { 
+@mixin ratio-scale($page-ratio) {
+    $page-ratio-string: (round($page-ratio * 1000)) #{'/'} 1000;
+    @media (max-aspect-ratio: $page-ratio-string) { 
         width: $fill * 100vw;
-        height: $fill * 100vw / $two-page-ratio;
+        height: $fill * 100vw / $page-ratio;
     }
 
-    @media (min-aspect-ratio: $two-page-ratio-string) { 
-        width: $fill * 100vh * $two-page-ratio;
+    @media (min-aspect-ratio: $page-ratio-string) { 
+        width: $fill * 100vh * $page-ratio;
         height: $fill * 100vh;
     }
 }
@@ -21,7 +21,13 @@
     $two-page-ratio: 2 * $page-width / $page-height;
 
     @media #{$media-desktop-or-greater} {
-        @include ratio-scale($two-page-ratio);
+        &:not(.desktop-two-pages) {
+            @include ratio-scale($one-page-ratio);
+        }
+
+        &.desktop-two-pages {
+            @include ratio-scale($two-page-ratio);
+        }
     } 
 
 

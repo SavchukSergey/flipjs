@@ -105,7 +105,11 @@ var Matrix2D = (function () {
         return {
             x: x,
             y: y,
-            toString: function () { return ("skew(" + x + "deg, " + y + "deg)"); }
+            toString: function () {
+                if (x || y)
+                    return "skew(" + x + "deg, " + y + "deg)";
+                return '';
+            }
         };
     };
     Matrix2D.prototype.getScale = function () {
@@ -117,7 +121,15 @@ var Matrix2D = (function () {
         return {
             x: x,
             y: y,
-            toString: function () { return ("scale(" + x + ", " + y + ")"); }
+            toString: function () {
+                if (x != 1 && y != 1)
+                    return "scale(" + x + ", " + y + ")";
+                if (x != 1)
+                    return "scaleX(" + x + ")";
+                if (y != 1)
+                    return "scaleY(" + y + ")";
+                return '';
+            }
         };
     };
     Matrix2D.prototype.getTranslate = function () {
@@ -128,7 +140,10 @@ var Matrix2D = (function () {
             x: dx,
             y: dy,
             toString: function () {
-                return "translate(" + dx + "px, " + dy + "px)";
+                if (dx || dy) {
+                    return "translate(" + dx + "px, " + dy + "px)";
+                }
+                return '';
             }
         };
     };
@@ -785,6 +800,9 @@ $.fn.pageTurn = function () {
         function getOuterClipMatrix(pointO, pointU, pointV) {
             var clipX = pointU.sub(pointO).mul(1 / pageWidth);
             var clipY = pointV.sub(pointO).mul(1 / pageHeight);
+            if (!clipX.length()) {
+                clipX = clipY.rotateCounterClockwise90();
+            }
             return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
         }
         /**

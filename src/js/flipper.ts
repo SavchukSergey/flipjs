@@ -406,6 +406,9 @@ $.fn.pageTurn = function () {
         function getOuterClipMatrix(pointO: Vector2D, pointU: Vector2D, pointV: Vector2D): Matrix2D {
             var clipX = pointU.sub(pointO).mul(1 / pageWidth);
             var clipY = pointV.sub(pointO).mul(1 / pageHeight);
+            if (!clipX.length()) {
+                clipX = clipY.rotateCounterClockwise90();
+            }
             return new Matrix2D([clipX.x, clipX.y, 0, clipY.x, clipY.y, 0, 0, 0, 1]).translate(pointO);
         }
 

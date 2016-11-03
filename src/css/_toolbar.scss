@@ -32,14 +32,15 @@
             
             @include toolbar-settings(1);
 
-            @media (-webkit-min-device-pixel-ratio: 2) and (orientation: landscape) { 
-                @include toolbar-settings(1.5);
+            //the onle way to detect ipad retina
+            @media (-webkit-min-device-pixel-ratio: 2) and (device-width: 768px) and (device-height: 1024px) {
+                @include toolbar-settings(1.88);
             }
 
-            @media (-webkit-min-device-pixel-ratio: 2) and (orientation: portrait) { 
-                @include toolbar-settings(2);
-            }
-
+            box-sizing: content-box;
+            font-family: Arial;
+            box-shadow: none;
+            line-height: 1.1;
         }
 
         a {
@@ -84,8 +85,10 @@
             text-align: center;
             display: inline-block;
             width: 5em;
+            height: auto;
             margin: 0;
             padding: 0;
+            border: solid 2px #eee;
         }
 
     }
